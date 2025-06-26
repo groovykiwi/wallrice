@@ -2,8 +2,7 @@
 
 **Colorize your images with diverse palettes in a macOS-inspired interface.**
 
-![WallRice Preview](./docs/screenshot.png)
-_Screenshot placeholder - Add your screenshot here_
+![WallRice Preview](/public/preview.png)
 
 ---
 
@@ -30,7 +29,7 @@ _Screenshot placeholder - Add your screenshot here_
 1.  **Clone the repository**
 
     ```bash
-    git clone https://github.com/yourusername/wallrice.git
+    git clone git@github.com:groovykiwi/wallrice.git
     cd wallrice
     ```
 
