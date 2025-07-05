@@ -35,8 +35,8 @@ export const MacOSTerminal: React.FC<MacOSTerminalProps> = ({
       style={{
         left: position.x,
         top: position.y,
-        background: terminalPalette?.bg,
-        color: terminalPalette?.fg,
+        background: terminalPalette?.background,
+        color: terminalPalette?.foreground,
         zIndex: 20,
       }}
       onMouseDown={onMouseDown}
@@ -67,15 +67,17 @@ export const MacOSTerminal: React.FC<MacOSTerminalProps> = ({
           <div
             className="px-4 py-3 text-xs rounded-b-lg font-mono"
             style={{
-              background: terminalPalette.bg,
-              color: terminalPalette.fg,
+              background: terminalPalette.background,
+              color: terminalPalette.foreground,
               minHeight: 100,
             }}
           >
             <div>
               <span style={{ color: terminalPalette.primary }}>$</span>{" "}
               <span style={{ color: terminalPalette.primary }}>npx</span>{" "}
-              <span style={{ color: terminalPalette.fg }}>wallrice</span>{" "}
+              <span style={{ color: terminalPalette.foreground }}>
+                wallrice
+              </span>{" "}
               <span style={{ color: terminalPalette.secondary }}>
                 --palette
               </span>{" "}

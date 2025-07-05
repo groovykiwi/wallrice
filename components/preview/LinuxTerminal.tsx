@@ -33,8 +33,8 @@ export const LinuxTerminal: React.FC<LinuxTerminalProps> = ({
       style={{
         left: position.x,
         top: position.y,
-        background: (terminalPalette?.bg || "#1e1e2e") + "CC",
-        color: terminalPalette?.fg || "#cdd6f4",
+        background: (terminalPalette?.background || "#1e1e2e") + "CC",
+        color: terminalPalette?.foreground || "#cdd6f4",
         border: `1px solid ${terminalPalette?.primary || "#89b4fa"}`,
         backdropFilter: "blur(8px)",
       }}
@@ -46,7 +46,7 @@ export const LinuxTerminal: React.FC<LinuxTerminalProps> = ({
             <span style={{ color: terminalPalette?.primary || "#89b4fa" }}>
               ❯
             </span>{" "}
-            <span style={{ color: terminalPalette?.fg || "#cdd6f4" }}>
+            <span style={{ color: terminalPalette?.foreground || "#cdd6f4" }}>
               neofetch
             </span>
           </div>
@@ -55,12 +55,12 @@ export const LinuxTerminal: React.FC<LinuxTerminalProps> = ({
               className="text-xs leading-tight pt-2 whitespace-pre flex items-start justify-start pl-2"
               style={{ color: terminalPalette?.primary || "#89b4fa" }}
             >
-              {`      /\\      
-     /  \\     
-    /    \\    
-   /      \\   
-  /   ,,   \\  
- /   |  |  -\\ 
+              {`      /\\
+     /  \\
+    /    \\
+   /      \\
+  /   ,,   \\
+ /   |  |  -\\
 /_-''    ''-_\\`}
             </div>
             <div className="space-y-1 col-span-2 text-xs">
