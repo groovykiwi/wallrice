@@ -105,23 +105,23 @@ export class ImageColorizer {
     x =
       x > SRGB_GAMMA_THRESHOLD
         ? Math.pow(
-            (x + SRGB_LINEAR_OFFSET) / SRGB_GAMMA_FACTOR,
-            SRGB_GAMMA_EXPONENT
-          )
+          (x + SRGB_LINEAR_OFFSET) / SRGB_GAMMA_FACTOR,
+          SRGB_GAMMA_EXPONENT
+        )
         : x / SRGB_LINEAR_FACTOR;
     y =
       y > SRGB_GAMMA_THRESHOLD
         ? Math.pow(
-            (y + SRGB_LINEAR_OFFSET) / SRGB_GAMMA_FACTOR,
-            SRGB_GAMMA_EXPONENT
-          )
+          (y + SRGB_LINEAR_OFFSET) / SRGB_GAMMA_FACTOR,
+          SRGB_GAMMA_EXPONENT
+        )
         : y / SRGB_LINEAR_FACTOR;
     z =
       z > SRGB_GAMMA_THRESHOLD
         ? Math.pow(
-            (z + SRGB_LINEAR_OFFSET) / SRGB_GAMMA_FACTOR,
-            SRGB_GAMMA_EXPONENT
-          )
+          (z + SRGB_LINEAR_OFFSET) / SRGB_GAMMA_FACTOR,
+          SRGB_GAMMA_EXPONENT
+        )
         : z / SRGB_LINEAR_FACTOR;
 
     // Transform linear RGB to XYZ using ITU-R BT.709 matrix
@@ -191,17 +191,17 @@ export class ImageColorizer {
     r =
       r > SRGB_INVERSE_GAMMA_THRESHOLD
         ? SRGB_GAMMA_FACTOR * Math.pow(r, 1 / SRGB_GAMMA_EXPONENT) -
-          SRGB_LINEAR_OFFSET
+        SRGB_LINEAR_OFFSET
         : SRGB_LINEAR_FACTOR * r;
     g =
       g > SRGB_INVERSE_GAMMA_THRESHOLD
         ? SRGB_GAMMA_FACTOR * Math.pow(g, 1 / SRGB_GAMMA_EXPONENT) -
-          SRGB_LINEAR_OFFSET
+        SRGB_LINEAR_OFFSET
         : SRGB_LINEAR_FACTOR * g;
     blue =
       blue > SRGB_INVERSE_GAMMA_THRESHOLD
         ? SRGB_GAMMA_FACTOR * Math.pow(blue, 1 / SRGB_GAMMA_EXPONENT) -
-          SRGB_LINEAR_OFFSET
+        SRGB_LINEAR_OFFSET
         : SRGB_LINEAR_FACTOR * blue;
 
     return [
@@ -238,8 +238,8 @@ export class ImageColorizer {
 
     return Math.sqrt(
       Math.pow(deltaL / kL, 2) +
-        Math.pow(deltaC / kC, 2) +
-        Math.pow(deltaH / kH, 2)
+      Math.pow(deltaC / kC, 2) +
+      Math.pow(deltaH / kH, 2)
     );
   }
 

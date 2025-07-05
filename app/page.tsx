@@ -22,7 +22,7 @@ import {
 
 // Define a constant for the default wallpaper image path
 const DEFAULT_WALLPAPER = "/wallpaper.png";
-const MAX_COLORS = 8;
+const MAX_COLORS = 6;
 
 export default function ModernImageColorizer() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -40,7 +40,7 @@ export default function ModernImageColorizer() {
       },
       showAdvancedSettings: false,
       validationResult: null,
-    } as ColorizationState
+    } as ColorizationState,
   );
 
   const [colorSelectionState, colorSelectionDispatch] = useReducer(
@@ -51,7 +51,7 @@ export default function ModernImageColorizer() {
       customColors: [],
       customColorInput: "#ffffff",
       showCustomColorInput: false,
-    } as ColorSelectionState
+    } as ColorSelectionState,
   );
 
   const [imageProcessingState, imageProcessingDispatch] = useReducer(
@@ -62,7 +62,7 @@ export default function ModernImageColorizer() {
       wallpaperUrl: DEFAULT_WALLPAPER,
       originalWallpaperUrl: undefined,
       isProcessing: false,
-    } as ImageProcessingState
+    } as ImageProcessingState,
   );
 
   const [uiState, uiDispatch] = useReducer(uiReducer, {
@@ -220,19 +220,19 @@ export default function ModernImageColorizer() {
     try {
       const colorizer = new ImageColorizer(canvasRef.current);
       const image = await colorizer.loadImage(
-        imageProcessingState.selectedFile
+        imageProcessingState.selectedFile,
       );
       colorizer.colorizeImage(
         image,
         colorSelectionState.activeColors,
-        colorizationState.options
+        colorizationState.options,
       );
       const dataURL = colorizer.getDataURL();
       imageProcessingDispatch({ type: "SET_PROCESSED_IMAGE", image: dataURL });
 
       // Automatically validate color accuracy
       const validation = colorizer.validateColorAccuracy(
-        colorSelectionState.activeColors
+        colorSelectionState.activeColors,
       );
       colorizationDispatch({
         type: "SET_VALIDATION_RESULT",
@@ -257,7 +257,7 @@ export default function ModernImageColorizer() {
       return;
     const originalName = imageProcessingState.selectedFile.name.replace(
       /\.[^/.]+$/,
-      ""
+      "",
     );
     const link = document.createElement("a");
     link.href = imageProcessingState.processedImage;

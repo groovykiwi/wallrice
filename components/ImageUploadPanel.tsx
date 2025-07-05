@@ -84,15 +84,17 @@ export function ImageUploadPanel({
             disabled={!selectedFile || isProcessing || activeColors.length < 1}
             className="flex-1 text-white font-medium py-3 px-6 rounded-lg text-base flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:opacity-90"
             style={{
-              backgroundColor: colorPalettes[selectedPalette].colors.primary,
+              backgroundColor: selectedFile
+                ? colorPalettes[selectedPalette].colors.ready
+                : colorPalettes[selectedPalette].colors.not_ready,
             }}
           >
             <Sparkles className="w-4 h-4" />
             {isProcessing
               ? "Processing..."
               : selectedFile
-              ? "Colorize"
-              : "Upload an image first"}
+                ? "Colorize"
+                : "Upload an image first"}
           </button>
 
           {processedImage && (

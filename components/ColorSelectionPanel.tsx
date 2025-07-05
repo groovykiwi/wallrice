@@ -99,8 +99,9 @@ export function ColorSelectionPanel({
           Palette Colors
         </h3>
         <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
-          {Object.entries(colorPalettes[selectedPalette].colors).map(
-            ([name, colorHex]) => {
+          {Object.entries(colorPalettes[selectedPalette].colors)
+            .filter(([name, _]) => name !== "ready" && name !== "not_ready")
+            .map(([name, colorHex]) => {
               const isSelected = activeColors.includes(colorHex);
               return (
                 <div key={name} className="text-center">
@@ -126,8 +127,7 @@ export function ColorSelectionPanel({
                   </div>
                 </div>
               );
-            }
-          )}
+            })}
         </div>
       </div>
 
