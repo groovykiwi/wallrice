@@ -1,0 +1,23 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="100%">
+      <stop offset="0%" stop-color="#667eea"/>
+      <stop offset="100%" stop-color="#764ba2"/>
+    </radialGradient>
+    <linearGradient id="overlay" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.1)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0.05)"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background gradient -->
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+  
+  <!-- Subtle overlay -->
+  <rect width="1920" height="1080" fill="url(#overlay)"/>
+  
+  <!-- Abstract shapes for visual interest -->
+  <circle cx="1600" cy="200" r="150" fill="rgba(255,255,255,0.08)" opacity="0.6"/>
+  <circle cx="300" cy="800" r="200" fill="rgba(255,255,255,0.06)" opacity="0.4"/>
+  <circle cx="1200" cy="900" r="100" fill="rgba(255,255,255,0.04)" opacity="0.8"/>
+</svg> 
