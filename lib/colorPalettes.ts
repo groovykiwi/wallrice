@@ -7,8 +7,6 @@ export interface ColorPalette {
     secondary: string;
     accent: string;
     muted: string;
-    ready: string;
-    not_ready: string;
   };
 }
 
@@ -22,8 +20,6 @@ export const colorPalettes: Record<string, ColorPalette> = {
       secondary: "#89b4fa",
       accent: "#f38ba8",
       muted: "#6c7086",
-      ready: "#cba6f0", // Use the primary color
-      not_ready: "#6c7086", // Use the muted color
     },
   },
   gruvbox: {
@@ -35,8 +31,6 @@ export const colorPalettes: Record<string, ColorPalette> = {
       secondary: "#83a598",
       accent: "#fe8019",
       muted: "#928374",
-      ready: "#fabd2f", // Use the primary color
-      not_ready: "#928374", // Use the muted color
     },
   },
   dracula: {
@@ -48,8 +42,6 @@ export const colorPalettes: Record<string, ColorPalette> = {
       secondary: "#8be9fd",
       accent: "#ff79c6",
       muted: "#6272a4",
-      ready: "#bd93f9", // Use the primary color
-      not_ready: "#6272a4", // Use the muted color
     },
   },
   everforest: {
@@ -61,8 +53,6 @@ export const colorPalettes: Record<string, ColorPalette> = {
       secondary: "#7FBBB3",
       accent: "#E67E80",
       muted: "#859289",
-      ready: "#A7C080", // Use the primary color (Green)
-      not_ready: "#859289", // Use the muted color
     },
   },
   tokyoNight: {
@@ -73,9 +63,7 @@ export const colorPalettes: Record<string, ColorPalette> = {
       primary: "#3d59a1",
       secondary: "#7aa2f7",
       accent: "#f7768e",
-      muted: "#595f7c", // A slightly adjusted muted for better contrast
-      ready: "#7aa2f7", // Use the secondary color
-      not_ready: "#595f7c", // Use the muted color
+      muted: "#595f7c",
     },
   },
   nightOwl: {
@@ -87,8 +75,6 @@ export const colorPalettes: Record<string, ColorPalette> = {
       secondary: "#82AAFF",
       accent: "#F78C6C",
       muted: "#637777",
-      ready: "#82AAFF", // Use the secondary color
-      not_ready: "#637777", // Use the muted color
     },
   },
   nord: {
@@ -100,8 +86,6 @@ export const colorPalettes: Record<string, ColorPalette> = {
       secondary: "#a3be8c",
       accent: "#b48ead",
       muted: "#4c566a",
-      ready: "#88c0d0", // Use the primary color
-      not_ready: "#4c566a", // Use the muted color
     },
   },
   rosePine: {
@@ -113,8 +97,6 @@ export const colorPalettes: Record<string, ColorPalette> = {
       secondary: "#f6c177",
       accent: "#31748f",
       muted: "#6e6a86",
-      ready: "#eb6f92", // Use the primary color
-      not_ready: "#6e6a86", // Use the muted color
     },
   },
   ayuDark: {
@@ -126,8 +108,6 @@ export const colorPalettes: Record<string, ColorPalette> = {
       secondary: "#36A3D9",
       accent: "#F07178",
       muted: "#5C6773",
-      ready: "#FFB454", // Use the primary color
-      not_ready: "#5C6773", // Use the muted color
     },
   },
   gruvboxMaterial: {
@@ -138,9 +118,7 @@ export const colorPalettes: Record<string, ColorPalette> = {
       primary: "#d8a657",
       secondary: "#7daea3",
       accent: "#ea6962",
-      muted: "#7c6f64", // A slightly adjusted muted for better contrast
-      ready: "#d8a657", // Use the primary color
-      not_ready: "#7c6f64", // Use the muted color
+      muted: "#7c6f64",
     },
   },
   solarizedDark: {
@@ -152,8 +130,6 @@ export const colorPalettes: Record<string, ColorPalette> = {
       secondary: "#859900",
       accent: "#dc322f",
       muted: "#586e75",
-      ready: "#268bd2", // Use the primary color
-      not_ready: "#586e75", // Use the muted color
     },
   },
   onedark: {
@@ -165,8 +141,6 @@ export const colorPalettes: Record<string, ColorPalette> = {
       secondary: "#61afef",
       accent: "#e06c75",
       muted: "#5c6370",
-      ready: "#61afef", // Use the secondary color
-      not_ready: "#5c6370", // Use the muted color
     },
   },
 };
