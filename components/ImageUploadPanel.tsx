@@ -37,7 +37,6 @@ export function ImageUploadPanel({
   processedImage,
   selectedPalette,
   isProcessing,
-  activeColors,
   showAdvancedSettings,
   colorizationOptions,
   validationResult,
