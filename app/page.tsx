@@ -304,7 +304,6 @@ export default function ModernImageColorizer() {
               processedImage={imageProcessingState.processedImage}
               selectedPalette={colorSelectionState.selectedPalette}
               isProcessing={imageProcessingState.isProcessing}
-              activeColors={colorSelectionState.activeColors}
               showAdvancedSettings={colorizationState.showAdvancedSettings}
               colorizationOptions={colorizationState.options}
               validationResult={colorizationState.validationResult}
