@@ -1,7 +1,7 @@
 // Shared types for preview components
 export interface TerminalPalette {
-  bg: string;
-  fg: string;
+  background: string;
+  foreground: string;
   primary: string;
   secondary: string;
   accent: string;

@@ -1,6 +1,13 @@
 import type React from "react";
 import { useRef } from "react";
-import { Upload, Download, Sparkles, RotateCcw, Settings } from "lucide-react";
+import {
+  Upload,
+  Download,
+  Sparkles,
+  RotateCcw,
+  Settings,
+  CheckCircle2,
+} from "lucide-react";
 import { colorPalettes } from "../lib/colorPalettes";
 import { ColorizeOptions } from "../lib/imageColorizer";
 
@@ -9,7 +16,6 @@ interface ImageUploadPanelProps {
   processedImage: string | null;
   selectedPalette: string;
   isProcessing: boolean;
-  activeColors: string[];
   showAdvancedSettings: boolean;
   colorizationOptions: ColorizeOptions;
   validationResult: {
@@ -30,7 +36,6 @@ export function ImageUploadPanel({
   processedImage,
   selectedPalette,
   isProcessing,
-  activeColors,
   showAdvancedSettings,
   colorizationOptions,
   validationResult,
@@ -77,37 +82,67 @@ export function ImageUploadPanel({
             className="hidden"
           />
         </div>
-        {/* Action Buttons */}
+
+        {/* Action Buttons Container */}
         <div className="flex gap-3 flex-col pt-4">
+          {/* Main action button: Upload -> Process -> Colorize More */}
           <button
             onClick={onProcessImage}
-            disabled={!selectedFile || isProcessing || activeColors.length < 1}
-            className="flex-1 text-white font-medium py-3 px-6 rounded-lg text-base flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:opacity-90"
+            disabled={!selectedFile || isProcessing}
+            className="flex-1 text-white font-medium py-3 px-6 rounded-lg text-base flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
             style={{
-              backgroundColor: colorPalettes[selectedPalette].colors.primary,
+              backgroundColor:
+                selectedFile && !isProcessing
+                  ? colorPalettes[selectedPalette].colors.primary
+                  : colorPalettes[selectedPalette].colors.muted,
             }}
           >
-            <Sparkles className="w-4 h-4" />
-            {isProcessing
-              ? "Processing..."
-              : selectedFile
-              ? "Colorize"
-              : "Upload an image first"}
+            {isProcessing ? (
+              <>
+                <Sparkles className="w-4 h-4 animate-spin" />
+                Processing...
+              </>
+            ) : processedImage ? (
+              <>
+                <Sparkles className="w-4 h-4" />
+                Colorize More
+              </>
+            ) : selectedFile ? (
+              <>
+                <Sparkles className="w-4 h-4" />
+                Colorize
+              </>
+            ) : (
+              "Upload an image first"
+            )}
           </button>
 
-          {processedImage && (
-            <button
-              onClick={onDownloadImage}
-              className="bg-white justify-center hover:bg-slate-50 text-slate-700 font-medium border border-slate-200 px-6 py-3 rounded-lg text-base flex items-center gap-2 transition-colors"
-            >
-              <Download className="w-4 h-4" />
-              Download
-            </button>
+          {/* This block appears after success, containing all subsequent actions. */}
+          {processedImage && !isProcessing && (
+            <div className="space-y-3 pt-4 border-t border-slate-200 mt-3 animate-in fade-in">
+              <div
+                className="bg-green-50 text-green-800 p-3 rounded-lg text-sm flex items-center gap-3"
+                role="alert"
+              >
+                <CheckCircle2 className="w-5 h-5 text-green-600" />
+                <span>Image successfully colorized.</span>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={onDownloadImage}
+                  className="flex-1 bg-white justify-center hover:bg-slate-50 text-slate-700 font-medium border border-slate-200 px-6 py-3 rounded-lg text-base flex items-center gap-2 transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                  Download
+                </button>
+              </div>
+            </div>
           )}
         </div>
 
         {/* Strength Slider - Always Visible */}
-        <div className="pt-4 border-slate-200">
+        <div className="pt-4 mt-4 border-t border-slate-200">
           <div className="space-y-2">
             <div className="flex justify-between">
               <label className="text-sm font-medium text-slate-700">
