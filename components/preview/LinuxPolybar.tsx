@@ -16,7 +16,7 @@ export const LinuxPolybar: React.FC<LinuxPolybarProps> = ({
       uiHidden ? "opacity-0 pointer-events-none" : "opacity-100"
     }`}
     style={{
-      background: terminalPalette?.bg || "#1e1e2e",
+      background: terminalPalette?.background || "#1e1e2e",
     }}
   >
     {/* Left - Workspaces */}
@@ -38,7 +38,7 @@ export const LinuxPolybar: React.FC<LinuxPolybarProps> = ({
     <div
       className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex items-center space-x-2 text-xs"
       style={{
-        color: terminalPalette?.fg || "#cdd6f4",
+        color: terminalPalette?.foreground || "#cdd6f4",
       }}
     >
       <span>

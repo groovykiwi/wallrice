@@ -109,9 +109,9 @@ export default function ModernImageColorizer() {
   useEffect(() => {
     const currentPalette = colorPalettes[colorSelectionState.selectedPalette];
     const defaultColors = [
-      currentPalette.colors.bg,
+      currentPalette.colors.background,
       currentPalette.colors.primary,
-      currentPalette.colors.fg,
+      currentPalette.colors.foreground,
     ];
 
     colorSelectionDispatch({
@@ -178,9 +178,9 @@ export default function ModernImageColorizer() {
   const resetColors = () => {
     const currentPalette = colorPalettes[colorSelectionState.selectedPalette];
     const defaultColors = [
-      currentPalette.colors.bg,
+      currentPalette.colors.background,
       currentPalette.colors.primary,
-      currentPalette.colors.fg,
+      currentPalette.colors.foreground,
     ];
     colorSelectionDispatch({
       type: "RESET_COLORS",
