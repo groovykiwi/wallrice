@@ -66,7 +66,7 @@ export default function ModernImageColorizer() {
 
   const [uiState, uiDispatch] = useReducer(uiReducer, {
     uiHidden: true, // Start hidden to prevent flash
-    isLinuxMode: false,
+    osMode: "macos",
     isMobile: true, // Start as mobile to prevent flash
   } as UIState);
 
@@ -277,8 +277,8 @@ export default function ModernImageColorizer() {
     <div className="min-h-screen bg-background">
       <HeroSection
         selectedPalette={colorSelectionState.selectedPalette}
-        isLinuxMode={uiState.isLinuxMode}
-        onToggleOS={() => uiDispatch({ type: "TOGGLE_OS" })}
+        osMode={uiState.osMode}
+        onOSChange={(osMode) => uiDispatch({ type: "SET_OS_MODE", osMode })}
       />
 
       {/* MacBook Preview */}
@@ -298,7 +298,7 @@ export default function ModernImageColorizer() {
               }
             }}
             terminalPaletteName={colorSelectionState.selectedPalette}
-            isLinuxMode={uiState.isLinuxMode}
+            osMode={uiState.osMode}
           />
         </div>
       </div>

@@ -6,7 +6,7 @@ import { DIMENSIONS } from "../types";
 
 interface UseDragBehaviorProps {
   screenRef: React.RefObject<HTMLDivElement | null>;
-  terminalType: "linux" | "macos";
+  terminalType: "linux" | "macos" | "windows11";
 }
 
 export const useDragBehavior = ({
@@ -35,6 +35,16 @@ export const useDragBehavior = ({
         const y = Math.max(
           DIMENSIONS.SPACING.TOP_MARGIN,
           (screenHeight - terminalHeight) * 0.4
+        );
+        setPosition({ x, y });
+      } else if (terminalType === "windows11") {
+        const terminalWidth = DIMENSIONS.WINDOWS11_TERMINAL.WIDTH;
+        const terminalHeight = DIMENSIONS.WINDOWS11_TERMINAL.HEIGHT;
+        const x = Math.max(0, (screenWidth - terminalWidth) * 0.5);
+        const y = Math.max(
+          DIMENSIONS.SPACING.TOP_MARGIN,
+          (screenHeight - terminalHeight - DIMENSIONS.SPACING.TASKBAR_MARGIN) *
+            0.5
         );
         setPosition({ x, y });
       } else {
@@ -93,6 +103,9 @@ export const useDragBehavior = ({
       if (terminalType === "linux") {
         terminalWidth = DIMENSIONS.LINUX_TERMINAL.WIDTH;
         terminalHeight = DIMENSIONS.LINUX_TERMINAL.HEIGHT;
+      } else if (terminalType === "windows11") {
+        terminalWidth = DIMENSIONS.WINDOWS11_TERMINAL.WIDTH;
+        terminalHeight = DIMENSIONS.WINDOWS11_TERMINAL.HEIGHT;
       } else {
         if (terminalRef.current) {
           const terminalRect = terminalRef.current.getBoundingClientRect();
@@ -114,6 +127,14 @@ export const useDragBehavior = ({
         newY = Math.max(
           DIMENSIONS.SPACING.TOP_MARGIN,
           Math.min(newY, screenRect.height - terminalHeight)
+        );
+      } else if (terminalType === "windows11") {
+        newY = Math.max(
+          0,
+          Math.min(
+            newY,
+            screenRect.height - terminalHeight - DIMENSIONS.TASKBAR.HEIGHT
+          )
         );
       } else {
         newY = Math.max(

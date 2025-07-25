@@ -8,15 +8,18 @@ import { LinuxPolybar } from "./preview/LinuxPolybar";
 import { LinuxTerminal } from "./preview/LinuxTerminal";
 import { MacOSMenuBar } from "./preview/MacOSMenuBar";
 import { MacOSTerminal } from "./preview/MacOSTerminal";
+import { Windows11Taskbar } from "./preview/Windows11Taskbar";
+import { Windows11PowerShell } from "./preview/Windows11PowerShell";
 import { useDragBehavior } from "./preview/hooks/useDragBehavior";
 import type { TerminalPalette } from "./preview/types";
+import type { OSMode } from "../lib/reducers";
 
 interface MacBookPreviewProps {
   wallpaperUrl?: string;
   terminalPalette?: TerminalPalette;
   uiHidden?: boolean;
   onToggleUi?: () => void;
-  isLinuxMode?: boolean;
+  osMode?: OSMode;
   originalWallpaperUrl?: string;
   terminalPaletteName?: string;
 }
@@ -27,7 +30,7 @@ export const MacBookPreview: React.FC<MacBookPreviewProps> = ({
   uiHidden = false,
   onToggleUi,
   terminalPaletteName,
-  isLinuxMode = false,
+  osMode = "macos",
   originalWallpaperUrl,
 }) => {
   const [currentWallpaper, setCurrentWallpaper] = useState(wallpaperUrl);
@@ -37,7 +40,7 @@ export const MacBookPreview: React.FC<MacBookPreviewProps> = ({
 
   const screenRef = useRef<HTMLDivElement>(null);
 
-  // Use drag behavior hooks for both terminal types
+  // Use drag behavior hooks for all terminal types
   const linuxDragBehavior = useDragBehavior({
     screenRef,
     terminalType: "linux",
@@ -46,6 +49,11 @@ export const MacBookPreview: React.FC<MacBookPreviewProps> = ({
   const macDragBehavior = useDragBehavior({
     screenRef,
     terminalType: "macos",
+  });
+
+  const windows11DragBehavior = useDragBehavior({
+    screenRef,
+    terminalType: "windows11",
   });
 
   useEffect(() => {
@@ -112,7 +120,7 @@ export const MacBookPreview: React.FC<MacBookPreviewProps> = ({
             />
 
             {/* Render different UI based on mode */}
-            {isLinuxMode ? (
+            {osMode === "linux" ? (
               <>
                 <LinuxPolybar
                   terminalPalette={terminalPalette}
@@ -126,6 +134,24 @@ export const MacBookPreview: React.FC<MacBookPreviewProps> = ({
                   isDragging={linuxDragBehavior.isDragging}
                   onMouseDown={linuxDragBehavior.handleMouseDown}
                   terminalRef={linuxDragBehavior.terminalRef}
+                />
+              </>
+            ) : osMode === "windows11" ? (
+              <>
+                <Windows11Taskbar
+                  terminalPalette={terminalPalette}
+                  uiHidden={uiHidden}
+                />
+                <Windows11PowerShell
+                  terminalPalette={terminalPalette}
+                  uiHidden={uiHidden}
+                  positionsInitialized={
+                    windows11DragBehavior.positionsInitialized
+                  }
+                  position={windows11DragBehavior.position}
+                  isDragging={windows11DragBehavior.isDragging}
+                  onMouseDown={windows11DragBehavior.handleMouseDown}
+                  terminalRef={windows11DragBehavior.terminalRef}
                 />
               </>
             ) : (
@@ -146,7 +172,7 @@ export const MacBookPreview: React.FC<MacBookPreviewProps> = ({
 
             {/* Content Area */}
             <div className="absolute inset-0 flex items-end justify-center pb-8">
-              {!isLinuxMode && (
+              {osMode === "macos" && (
                 <div
                   className={`${
                     uiHidden ? "opacity-0 pointer-events-none" : "opacity-100"

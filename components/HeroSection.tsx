@@ -1,17 +1,18 @@
 import type React from "react";
-import { Apple, Monitor } from "lucide-react";
+import Image from "next/image";
 import { colorPalettes } from "../lib/colorPalettes";
+import type { OSMode } from "../lib/reducers";
 
 interface HeroSectionProps {
   selectedPalette: string;
-  isLinuxMode: boolean;
-  onToggleOS: () => void;
+  osMode: OSMode;
+  onOSChange: (osMode: OSMode) => void;
 }
 
 export function HeroSection({
   selectedPalette,
-  isLinuxMode,
-  onToggleOS,
+  osMode,
+  onOSChange,
 }: HeroSectionProps) {
   return (
     <>
@@ -45,24 +46,55 @@ export function HeroSection({
       <div className=" z-50 w-full  justify-center mb-6 mt-0 px-4 hidden md:flex">
         <div className="flex bg-white/20 backdrop-blur-md rounded-lg p-1 border border-white/20">
           <button
-            onClick={onToggleOS}
-            className={`flex items-center cursor-pointer gap-2 px-3 py-2  rounded-md text-sm font-medium transition-colors ${
-              !isLinuxMode ? " text-black/70 shadow-sm" : "text-black/70 "
+            onClick={() => onOSChange("macos")}
+            className={`flex items-center cursor-pointer gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              osMode === "macos"
+                ? "bg-white/30 text-black shadow-sm"
+                : "text-black/70"
             }`}
           >
-            <Apple className="w-3 h-3" />
+            <Image
+              src="/logo/apple.svg"
+              alt="macOS"
+              width={12}
+              height={12}
+              className="w-3 h-3"
+            />
             macOS
           </button>
           <button
-            onClick={onToggleOS}
+            onClick={() => onOSChange("linux")}
             className={`flex items-center cursor-pointer gap-2 ml-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              isLinuxMode
+              osMode === "linux"
                 ? "bg-white/30 text-black shadow-sm"
-                : "text-black/70 "
+                : "text-black/70"
             }`}
           >
-            <Monitor className="w-3 h-3" />
+            <Image
+              src="/logo/linux.svg"
+              alt="Linux"
+              width={12}
+              height={12}
+              className="w-3 h-3"
+            />
             Linux
+          </button>
+          <button
+            onClick={() => onOSChange("windows11")}
+            className={`flex items-center cursor-pointer gap-2 ml-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              osMode === "windows11"
+                ? "bg-white/30 text-black shadow-sm"
+                : "text-black/70"
+            }`}
+          >
+            <Image
+              src="/logo/windows.svg"
+              alt="Windows 11"
+              width={12}
+              height={12}
+              className="w-3 h-3"
+            />
+            Windows 11
           </button>
         </div>
       </div>

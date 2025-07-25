@@ -25,6 +25,11 @@ export const DIMENSIONS = {
     WIDTH: 320,
     HEIGHT: 140,
   },
+  // Windows 11 Terminal
+  WINDOWS11_TERMINAL: {
+    WIDTH: 480,
+    HEIGHT: 260,
+  },
   // UI Elements
   MENU_BAR: {
     HEIGHT: 24,
@@ -32,10 +37,14 @@ export const DIMENSIONS = {
   DOCK: {
     HEIGHT: 80,
   },
+  TASKBAR: {
+    HEIGHT: 48,
+  },
   // Spacing and Offsets
   SPACING: {
     SCREEN_EDGE: 20,
     TOP_MARGIN: 24,
     DOCK_MARGIN: 100,
+    TASKBAR_MARGIN: 60,
   },
 } as const;

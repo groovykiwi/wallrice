@@ -233,17 +233,19 @@ export const imageProcessingReducer = (
 };
 
 // UI state and actions
+export type OSMode = "macos" | "linux" | "windows11";
+
 export interface UIState {
   uiHidden: boolean;
-  isLinuxMode: boolean;
+  osMode: OSMode;
   isMobile: boolean;
 }
 
 export type UIAction =
   | { type: "SET_UI_HIDDEN"; hidden: boolean }
   | { type: "TOGGLE_UI" }
-  | { type: "SET_LINUX_MODE"; isLinux: boolean }
-  | { type: "TOGGLE_OS" }
+  | { type: "SET_OS_MODE"; osMode: OSMode }
+  | { type: "CYCLE_OS" }
   | { type: "SET_MOBILE"; isMobile: boolean };
 
 export const uiReducer = (state: UIState, action: UIAction): UIState => {
@@ -258,15 +260,21 @@ export const uiReducer = (state: UIState, action: UIAction): UIState => {
         ...state,
         uiHidden: !state.uiHidden,
       };
-    case "SET_LINUX_MODE":
+    case "SET_OS_MODE":
       return {
         ...state,
-        isLinuxMode: action.isLinux,
+        osMode: action.osMode,
       };
-    case "TOGGLE_OS":
+    case "CYCLE_OS":
+      const nextOSMode: OSMode =
+        state.osMode === "macos"
+          ? "linux"
+          : state.osMode === "linux"
+          ? "windows11"
+          : "macos";
       return {
         ...state,
-        isLinuxMode: !state.isLinuxMode,
+        osMode: nextOSMode,
       };
     case "SET_MOBILE":
       return {
