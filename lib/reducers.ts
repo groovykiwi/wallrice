@@ -84,7 +84,7 @@ export type ColorSelectionAction =
   | { type: "SET_PALETTE"; palette: string }
   | { type: "TOGGLE_COLOR"; color: string; maxColors: number }
   | { type: "ADD_CUSTOM_COLOR"; color: string; maxColors: number }
-  | { type: "REMOVE_CUSTOM_COLOR"; color: string }
+  | { type: "REMOVE_CUSTOM_COLOR"; color: string; maxColors: number }
   | { type: "SET_CUSTOM_COLOR_INPUT"; input: string }
   | { type: "TOGGLE_CUSTOM_COLOR_INPUT" }
   | { type: "RESET_COLORS"; defaultColors: string[] }
@@ -130,12 +130,23 @@ export const colorSelectionReducer = (
         activeColors: newActiveColors,
       };
     }
-    case "REMOVE_CUSTOM_COLOR":
+    case "REMOVE_CUSTOM_COLOR": {
+      const newCustomColors = state.customColors.filter(
+        (c) => c !== action.color
+      );
+      const newActiveColors = state.activeColors.filter(
+        (c) => c !== action.color
+      );
+
+      // Ensure we don't exceed the new max colors limit after removing this custom color
+      const finalActiveColors = newActiveColors.slice(0, action.maxColors);
+
       return {
         ...state,
-        customColors: state.customColors.filter((c) => c !== action.color),
-        activeColors: state.activeColors.filter((c) => c !== action.color),
+        customColors: newCustomColors,
+        activeColors: finalActiveColors,
       };
+    }
     case "SET_CUSTOM_COLOR_INPUT":
       return {
         ...state,

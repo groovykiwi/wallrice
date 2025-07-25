@@ -22,8 +22,7 @@ import {
 
 // Define a constant for the default wallpaper image path
 const DEFAULT_WALLPAPER = "/wallpaper.png";
-const MAX_COLORS = 8;
-
+const BASE_PALETTE_COLORS = 6;
 export default function ModernImageColorizer() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -149,11 +148,15 @@ export default function ModernImageColorizer() {
     }
   };
 
+  // Calculate dynamic max colors based on palette colors + custom colors
+  const maxColors =
+    BASE_PALETTE_COLORS + colorSelectionState.customColors.length;
+
   const handleColorSelection = (colorHex: string) => {
     colorSelectionDispatch({
       type: "TOGGLE_COLOR",
       color: colorHex,
-      maxColors: MAX_COLORS,
+      maxColors,
     });
     colorizationDispatch({ type: "CLEAR_VALIDATION" });
   };
@@ -162,15 +165,20 @@ export default function ModernImageColorizer() {
     colorSelectionDispatch({
       type: "ADD_CUSTOM_COLOR",
       color: colorSelectionState.customColorInput,
-      maxColors: MAX_COLORS,
+      maxColors,
     });
     colorizationDispatch({ type: "CLEAR_VALIDATION" });
   };
 
   const removeCustomColor = (colorToRemove: string) => {
+    // Calculate the new max colors after removing this custom color
+    const newMaxColors =
+      BASE_PALETTE_COLORS + (colorSelectionState.customColors.length - 1);
+
     colorSelectionDispatch({
       type: "REMOVE_CUSTOM_COLOR",
       color: colorToRemove,
+      maxColors: newMaxColors,
     });
     colorizationDispatch({ type: "CLEAR_VALIDATION" });
   };
@@ -200,7 +208,7 @@ export default function ModernImageColorizer() {
     colorSelectionDispatch({
       type: "SELECT_ALL_COLORS",
       allColors,
-      maxColors: MAX_COLORS,
+      maxColors,
     });
     colorizationDispatch({ type: "CLEAR_VALIDATION" });
   };
@@ -327,7 +335,7 @@ export default function ModernImageColorizer() {
               customColors={colorSelectionState.customColors}
               customColorInput={colorSelectionState.customColorInput}
               showCustomColorInput={colorSelectionState.showCustomColorInput}
-              MAX_COLORS={MAX_COLORS}
+              MAX_COLORS={maxColors}
               onPaletteChange={(palette) =>
                 colorSelectionDispatch({ type: "SET_PALETTE", palette })
               }
