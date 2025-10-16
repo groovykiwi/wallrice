@@ -1,5 +1,6 @@
+"use client";
 import type React from "react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import {
   Upload,
   Download,
@@ -47,6 +48,26 @@ export function ImageUploadPanel({
   onResetOptions,
 }: ImageUploadPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+
+      // Using fake events as onFileChange is provided from parent
+      const fakeEvent = {
+        target: { files: [file] },
+      } as unknown as React.ChangeEvent<HTMLInputElement>;
+
+      onFileChange(fakeEvent);
+      e.dataTransfer.clearData();
+    }
+  };
 
   return (
     <div className="space-y-6 p-8 rounded-xl shadow-md self-start">
@@ -56,8 +77,24 @@ export function ImageUploadPanel({
         </span>
         <div className="space-y-4">
           <div
-            className="w-full h-16 border-2 border-dashed border-slate-300 hover:border-slate-400 hover:bg-slate-50 transition-all flex items-center gap-3 rounded-xl text-slate-700 text-lg font-medium px-4 cursor-pointer"
+            className={`w-full h-16 border-2 border-dashed rounded-xl flex items-center gap-3 px-4 cursor-pointer transition-all
+            ${
+              isDragging
+                ? "border-blue-400 bg-blue-50"
+                : "border-slate-300 hover:border-slate-400 hover:bg-slate-50"
+            }`}
             onClick={() => fileInputRef.current?.click()}
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsDragging(true);
+            }}
+            onDragLeave={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsDragging(false);
+            }}
+            onDrop={handleDrop}
             tabIndex={0}
             role="button"
             onKeyDown={(e) => {
