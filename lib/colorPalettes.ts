@@ -143,4 +143,15 @@ export const colorPalettes: Record<string, ColorPalette> = {
       muted: "#5c6370",
     },
   },
+  Kanagawa: {
+    name: "Kanagawa",
+    colors: {
+      background: "#1F1F28",
+      foreground: "#DCD7BA",
+      primary: "#7E9CD8",
+      secondary: "#98BB6C",
+      accent: "#938AA9",
+      muted: "#727169",
+    },
+  },
 };
