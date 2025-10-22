@@ -1,5 +1,5 @@
 import type React from "react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import {
   Upload,
   Download,
@@ -47,6 +47,52 @@ export function ImageUploadPanel({
   onResetOptions,
 }: ImageUploadPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Handles file selection from either drag-and-drop or file input
+  const handleFileSelection = (file: File) => {
+    // Create a synthetic event to maintain compatibility with onFileChange
+    const event = {
+      target: {
+        files: [file],
+      },
+    } as unknown as React.ChangeEvent<HTMLInputElement>;
+    onFileChange(event);
+  };
+
+  const handleDragEvent = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    handleDragEvent(e);
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    handleDragEvent(e);
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    handleDragEvent(e);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    handleDragEvent(e);
+    setIsDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+
+      // Validate that the file is an image
+      if (file.type.startsWith("image/")) {
+        handleFileSelection(file);
+      }
+    }
+  };
 
   return (
     <div className="space-y-6 p-8 rounded-xl shadow-md self-start">
@@ -56,8 +102,16 @@ export function ImageUploadPanel({
         </span>
         <div className="space-y-4">
           <div
-            className="w-full h-16 border-2 border-dashed border-slate-300 hover:border-slate-400 hover:bg-slate-50 transition-all flex items-center gap-3 rounded-xl text-slate-700 text-lg font-medium px-4 cursor-pointer"
+            className={`w-full h-16 border-2 border-dashed transition-all flex items-center gap-3 rounded-xl text-lg font-medium px-4 cursor-pointer ${
+              isDragging
+                ? "border-blue-500 bg-blue-50 text-blue-700"
+                : "border-slate-300 hover:border-slate-400 hover:bg-slate-50 text-slate-700"
+            }`}
             onClick={() => fileInputRef.current?.click()}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
             tabIndex={0}
             role="button"
             onKeyDown={(e) => {
@@ -68,10 +122,14 @@ export function ImageUploadPanel({
           >
             <Upload className="w-6 h-6 mr-3" />
             <span className="truncate flex-1 text-sm text-left">
-              {selectedFile ? selectedFile.name : "No image uploaded"}
+              {isDragging
+                ? "Drop image here..."
+                : selectedFile
+                ? selectedFile.name
+                : "Click or drag image to upload"}
             </span>
             <span className="ml-auto text-slate-500 text-base font-normal">
-              {selectedFile ? "Change" : ""}
+              {selectedFile && !isDragging ? "Change" : ""}
             </span>
           </div>
           <input
