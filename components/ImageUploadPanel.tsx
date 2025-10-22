@@ -47,6 +47,7 @@ export function ImageUploadPanel({
   onResetOptions,
 }: ImageUploadPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dropZoneRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
   // Handles file selection from either drag-and-drop or file input
@@ -72,7 +73,13 @@ export function ImageUploadPanel({
 
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     handleDragEvent(e);
-    setIsDragging(false);
+
+    // Only set isDragging to false if we're actually leaving the drop zone
+    // (not just moving to a child element within it)
+    const relatedTarget = e.relatedTarget as Node;
+    if (!dropZoneRef.current?.contains(relatedTarget)) {
+      setIsDragging(false);
+    }
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -102,6 +109,7 @@ export function ImageUploadPanel({
         </span>
         <div className="space-y-4">
           <div
+            ref={dropZoneRef}
             className={`w-full h-16 border-2 border-dashed transition-all flex items-center gap-3 rounded-xl text-lg font-medium px-4 cursor-pointer ${
               isDragging
                 ? "border-blue-500 bg-blue-50 text-blue-700"
