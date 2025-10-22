@@ -131,6 +131,47 @@ export function ColorSelectionPanel({
         </div>
       </div>
 
+      {/* Tips Section */}
+      <div className="px-1">
+        <div className="text-xs text-slate-600 leading-relaxed">
+          <ul className="list-disc list-inside text-xs text-slate-600 space-y-1">
+            <li>
+              Adjust the strength slider to find the perfect balance between
+              original and colorized tones.
+            </li>
+            <li>
+              Disable &quot;Preserve Edges&quot; in advanced settings for more
+              widespread coloring.
+            </li>
+          </ul>
+          <span className="block mt-4 text-xs text-slate-500">
+            Don&apos;t see your favorite palette? Create a pull request on{" "}
+            <a
+              href="https://github.com/groovykiwi/wallrice"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline font-semibold transition-colors"
+              style={{
+                color: colorPalettes[selectedPalette].colors.primary,
+                textDecorationColor:
+                  colorPalettes[selectedPalette].colors.primary,
+              }}
+              onMouseOver={(e) => {
+                (e.target as HTMLElement).style.color =
+                  colorPalettes[selectedPalette].colors.foreground;
+              }}
+              onMouseOut={(e) => {
+                (e.target as HTMLElement).style.color =
+                  colorPalettes[selectedPalette].colors.primary;
+              }}
+            >
+              GitHub
+            </a>{" "}
+            to add your color scheme!
+          </span>
+        </div>
+      </div>
+
       {/* Custom Color Input - Only show when toggled */}
       {showCustomColorInput && (
         <div className="bg-slate-50/50 border border-slate-200 rounded-lg p-3">
