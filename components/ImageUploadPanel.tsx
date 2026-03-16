@@ -27,6 +27,7 @@ interface ImageUploadPanelProps {
   onFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onProcessImage: () => void;
   onDownloadImage: () => void;
+  onStartOver: () => void;
   onToggleAdvancedSettings: () => void;
   onUpdateOption: (key: keyof ColorizeOptions, value: number | boolean) => void;
   onResetOptions: () => void;
@@ -44,6 +45,7 @@ export function ImageUploadPanel({
   onFileChange,
   onProcessImage,
   onDownloadImage,
+  onStartOver,
   onToggleAdvancedSettings,
   onUpdateOption,
   onResetOptions,
@@ -102,6 +104,36 @@ export function ImageUploadPanel({
       }
     }
   };
+
+  const handleStartOver = () => {
+    onStartOver();
+    setIsDragging(false);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const processButtonContent = isProcessing ? (
+    <>
+      <Sparkles className="w-4 h-4 animate-spin" />
+      Processing...
+    </>
+  ) : !selectedFile ? (
+    "Upload an image first"
+  ) : !canProcess ? (
+    "Select at least one color"
+  ) : processedImage ? (
+    <>
+      <Sparkles className="w-4 h-4" />
+      Colorize More
+    </>
+  ) : (
+    <>
+      <Sparkles className="w-4 h-4" />
+      Colorize
+    </>
+  );
 
   return (
     <div className="space-y-6 p-8 rounded-xl shadow-md self-start">
@@ -165,32 +197,23 @@ export function ImageUploadPanel({
                   : colorPalettes[selectedPalette].colors.muted,
             }}
           >
-            {isProcessing ? (
-              <>
-                <Sparkles className="w-4 h-4 animate-spin" />
-                Processing...
-              </>
-            ) : processedImage ? (
-              <>
-                <Sparkles className="w-4 h-4" />
-                Colorize More
-              </>
-            ) : selectedFile ? (
-              <>
-                <Sparkles className="w-4 h-4" />
-                Colorize
-              </>
-            ) : selectedFile ? (
-              "Select at least one color"
-            ) : (
-              "Upload an image first"
-            )}
+            {processButtonContent}
           </button>
 
           {selectedFile && !isProcessing && !canProcess && (
             <p className="text-sm text-slate-500">
               Select at least one color to start colorizing.
             </p>
+          )}
+
+          {selectedFile && !isProcessing && !processedImage && (
+            <button
+              onClick={handleStartOver}
+              className="w-full bg-white justify-center hover:bg-slate-50 text-slate-700 font-medium border border-slate-200 px-6 py-3 rounded-lg text-base flex items-center gap-2 whitespace-nowrap transition-colors"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Start over
+            </button>
           )}
 
           {/* This block appears after success, containing all subsequent actions. */}
@@ -204,13 +227,20 @@ export function ImageUploadPanel({
                 <span>Image successfully colorized.</span>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex flex-col gap-3">
                 <button
                   onClick={onDownloadImage}
-                  className="flex-1 bg-white justify-center hover:bg-slate-50 text-slate-700 font-medium border border-slate-200 px-6 py-3 rounded-lg text-base flex items-center gap-2 transition-colors"
+                  className="w-full bg-white justify-center hover:bg-slate-50 text-slate-700 font-medium border border-slate-200 px-6 py-3 rounded-lg text-base flex items-center gap-2 whitespace-nowrap transition-colors"
                 >
                   <Download className="w-4 h-4" />
                   Download
+                </button>
+                <button
+                  onClick={handleStartOver}
+                  className="w-full bg-white justify-center hover:bg-slate-50 text-slate-700 font-medium border border-slate-200 px-6 py-3 rounded-lg text-base flex items-center gap-2 whitespace-nowrap transition-colors"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  Start over
                 </button>
               </div>
             </div>

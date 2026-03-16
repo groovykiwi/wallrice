@@ -327,6 +327,11 @@ export default function ModernImageColorizer() {
     link.click();
   };
 
+  const startOver = () => {
+    imageProcessingDispatch({ type: "RESET_PROCESSING" });
+    colorizationDispatch({ type: "CLEAR_VALIDATION" });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <HeroSection
@@ -373,6 +378,7 @@ export default function ModernImageColorizer() {
               onFileChange={handleFileChange}
               onProcessImage={processImage}
               onDownloadImage={downloadImage}
+              onStartOver={startOver}
               onToggleAdvancedSettings={() =>
                 colorizationDispatch({ type: "TOGGLE_ADVANCED_SETTINGS" })
               }
