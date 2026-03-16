@@ -98,15 +98,21 @@ export const MacBookPreview: React.FC<MacBookPreviewProps> = ({
             ref={screenRef}
           >
             <div
-              className="absolute inset-0 bg-cover bg-center"
+              className="absolute inset-0 bg-cover bg-center transition-opacity duration-200"
               style={{
-                backgroundImage: `url(${
-                  isShowingOriginal && originalWallpaperUrl
-                    ? originalWallpaperUrl
-                    : currentWallpaper
-                })`,
+                backgroundImage: `url(${currentWallpaper})`,
+                opacity: isShowingOriginal && originalWallpaperUrl ? 0 : 1,
               }}
             />
+            {originalWallpaperUrl && (
+              <div
+                className="absolute inset-0 bg-cover bg-center transition-opacity duration-200"
+                style={{
+                  backgroundImage: `url(${originalWallpaperUrl})`,
+                  opacity: isShowingOriginal ? 1 : 0,
+                }}
+              />
+            )}
             <div
               onTransitionEnd={handleTransitionEnd}
               className="absolute inset-0 bg-cover bg-center transition-opacity duration-500"

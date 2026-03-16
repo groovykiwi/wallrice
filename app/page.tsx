@@ -32,6 +32,7 @@ const isValidHexColor = (value: string) =>
 
 export default function ModernImageColorizer() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const originalWallpaperObjectUrlRef = useRef<string | null>(null);
   const processingInputVersionRef = useRef(0);
 
   // Consolidated state using useReducer
@@ -78,39 +79,50 @@ export default function ModernImageColorizer() {
     isMobile: true, // Start as mobile to prevent flash
   } as UIState);
 
-  // Update wallpaper URL when file or processed image changes
+  // Keep the original uploaded file URL alive until the file changes.
   useEffect(() => {
-    let objectUrl: string | null = null;
+    if (!imageProcessingState.selectedFile) {
+      if (originalWallpaperObjectUrlRef.current) {
+        URL.revokeObjectURL(originalWallpaperObjectUrlRef.current);
+        originalWallpaperObjectUrlRef.current = null;
+      }
 
-    if (imageProcessingState.processedImage) {
-      imageProcessingDispatch({
-        type: "SET_WALLPAPER_URL",
-        url: imageProcessingState.processedImage,
-      });
-    } else if (imageProcessingState.selectedFile) {
-      objectUrl = URL.createObjectURL(imageProcessingState.selectedFile);
-      imageProcessingDispatch({ type: "SET_WALLPAPER_URL", url: objectUrl });
-      imageProcessingDispatch({
-        type: "SET_ORIGINAL_WALLPAPER_URL",
-        url: objectUrl,
-      });
-    } else {
-      imageProcessingDispatch({
-        type: "SET_WALLPAPER_URL",
-        url: DEFAULT_WALLPAPER,
-      });
       imageProcessingDispatch({
         type: "SET_ORIGINAL_WALLPAPER_URL",
         url: undefined,
       });
+      return;
     }
 
+    const objectUrl = URL.createObjectURL(imageProcessingState.selectedFile);
+    originalWallpaperObjectUrlRef.current = objectUrl;
+    imageProcessingDispatch({
+      type: "SET_ORIGINAL_WALLPAPER_URL",
+      url: objectUrl,
+    });
+
     return () => {
-      if (objectUrl) {
+      if (originalWallpaperObjectUrlRef.current === objectUrl) {
         URL.revokeObjectURL(objectUrl);
+        originalWallpaperObjectUrlRef.current = null;
       }
     };
-  }, [imageProcessingState.selectedFile, imageProcessingState.processedImage]);
+  }, [imageProcessingState.selectedFile]);
+
+  useEffect(() => {
+    const wallpaperUrl =
+      imageProcessingState.processedImage ||
+      imageProcessingState.originalWallpaperUrl ||
+      DEFAULT_WALLPAPER;
+
+    imageProcessingDispatch({
+      type: "SET_WALLPAPER_URL",
+      url: wallpaperUrl,
+    });
+  }, [
+    imageProcessingState.processedImage,
+    imageProcessingState.originalWallpaperUrl,
+  ]);
 
   // Update active colors when palette changes
   useEffect(() => {
