@@ -8,6 +8,9 @@ interface ColorSelectionPanelProps {
   customColors: string[];
   customColorInput: string;
   showCustomColorInput: boolean;
+  customColorInputError: string | null;
+  customColorPickerValue: string;
+  canAddCustomColor: boolean;
   MAX_COLORS: number;
   onPaletteChange: (palette: string) => void;
   onColorSelection: (colorHex: string) => void;
@@ -25,6 +28,9 @@ export function ColorSelectionPanel({
   customColors,
   customColorInput,
   showCustomColorInput,
+  customColorInputError,
+  customColorPickerValue,
+  canAddCustomColor,
   MAX_COLORS,
   onPaletteChange,
   onColorSelection,
@@ -178,7 +184,7 @@ export function ColorSelectionPanel({
           <div className="flex gap-2">
             <input
               type="color"
-              value={customColorInput}
+              value={customColorPickerValue}
               onChange={(e) => onCustomColorInputChange(e.target.value)}
               className="w-8 h-8 border border-slate-300 rounded cursor-pointer"
             />
@@ -191,12 +197,15 @@ export function ColorSelectionPanel({
             />
             <button
               onClick={onAddCustomColor}
-              disabled={customColors.includes(customColorInput)}
+              disabled={!canAddCustomColor}
               className="bg-slate-900 hover:bg-slate-800 text-white px-2 py-1 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Add
             </button>
           </div>
+          {customColorInputError && (
+            <p className="mt-2 text-sm text-red-600">{customColorInputError}</p>
+          )}
         </div>
       )}
 

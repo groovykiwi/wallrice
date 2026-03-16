@@ -23,6 +23,13 @@ import {
 // Define a constant for the default wallpaper image path
 const DEFAULT_WALLPAPER = "/wallpaper.png";
 const BASE_PALETTE_COLORS = 6;
+const HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
+
+const normalizeHexColor = (value: string) => value.trim().toLowerCase();
+
+const isValidHexColor = (value: string) =>
+  HEX_COLOR_PATTERN.test(normalizeHexColor(value));
+
 export default function ModernImageColorizer() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const processingInputVersionRef = useRef(0);
@@ -162,6 +169,22 @@ export default function ModernImageColorizer() {
   // Calculate dynamic max colors based on palette colors + custom colors
   const maxColors =
     BASE_PALETTE_COLORS + colorSelectionState.customColors.length;
+  const normalizedCustomColorInput = normalizeHexColor(
+    colorSelectionState.customColorInput
+  );
+  const customColorSet = new Set(
+    colorSelectionState.customColors.map(normalizeHexColor)
+  );
+  const isCustomColorInputValid = isValidHexColor(
+    colorSelectionState.customColorInput
+  );
+  const isDuplicateCustomColor = customColorSet.has(normalizedCustomColorInput);
+  const customColorInputError =
+    normalizedCustomColorInput.length === 0 || isCustomColorInputValid
+      ? isDuplicateCustomColor
+        ? "This custom color has already been added."
+        : null
+      : "Enter a full 6-digit hex color like #aabbcc.";
 
   const handleColorSelection = (colorHex: string) => {
     colorSelectionDispatch({
@@ -173,9 +196,13 @@ export default function ModernImageColorizer() {
   };
 
   const addCustomColor = () => {
+    if (!isCustomColorInputValid || isDuplicateCustomColor) {
+      return;
+    }
+
     colorSelectionDispatch({
       type: "ADD_CUSTOM_COLOR",
-      color: colorSelectionState.customColorInput,
+      color: normalizedCustomColorInput,
       maxColors,
     });
     colorizationDispatch({ type: "CLEAR_VALIDATION" });
@@ -346,6 +373,13 @@ export default function ModernImageColorizer() {
               customColors={colorSelectionState.customColors}
               customColorInput={colorSelectionState.customColorInput}
               showCustomColorInput={colorSelectionState.showCustomColorInput}
+              customColorInputError={customColorInputError}
+              customColorPickerValue={
+                isCustomColorInputValid ? normalizedCustomColorInput : "#ffffff"
+              }
+              canAddCustomColor={
+                isCustomColorInputValid && !isDuplicateCustomColor
+              }
               MAX_COLORS={maxColors}
               onPaletteChange={(palette) =>
                 colorSelectionDispatch({ type: "SET_PALETTE", palette })
