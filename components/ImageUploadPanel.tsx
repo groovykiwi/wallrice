@@ -24,7 +24,7 @@ interface ImageUploadPanelProps {
     maxError: number;
     isAccurate: boolean;
   } | null;
-  onFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onFileSelect: (file: File | null) => void;
   onProcessImage: () => void;
   onDownloadImage: () => void;
   onStartOver: () => void;
@@ -42,7 +42,7 @@ export function ImageUploadPanel({
   showAdvancedSettings,
   colorizationOptions,
   validationResult,
-  onFileChange,
+  onFileSelect,
   onProcessImage,
   onDownloadImage,
   onStartOver,
@@ -53,17 +53,6 @@ export function ImageUploadPanel({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-
-  // Handles file selection from either drag-and-drop or file input
-  const handleFileSelection = (file: File) => {
-    // Create a synthetic event to maintain compatibility with onFileChange
-    const event = {
-      target: {
-        files: [file],
-      },
-    } as unknown as React.ChangeEvent<HTMLInputElement>;
-    onFileChange(event);
-  };
 
   const handleDragEvent = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -100,9 +89,13 @@ export function ImageUploadPanel({
 
       // Validate that the file is an image
       if (file.type.startsWith("image/")) {
-        handleFileSelection(file);
+        onFileSelect(file);
       }
     }
+  };
+
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    onFileSelect(event.target.files?.[0] ?? null);
   };
 
   const handleStartOver = () => {
@@ -178,7 +171,7 @@ export function ImageUploadPanel({
             ref={fileInputRef}
             type="file"
             accept="image/*"
-            onChange={onFileChange}
+            onChange={handleInputChange}
             className="hidden"
           />
         </div>

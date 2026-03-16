@@ -169,8 +169,7 @@ export default function ModernImageColorizer() {
   ]);
 
   // Event handlers
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const handleFileSelect = (file: File | null) => {
     if (file && file.type.startsWith("image/")) {
       imageProcessingDispatch({ type: "SET_FILE", file });
       imageProcessingDispatch({ type: "SET_PROCESSED_IMAGE", image: null });
@@ -375,7 +374,7 @@ export default function ModernImageColorizer() {
               showAdvancedSettings={colorizationState.showAdvancedSettings}
               colorizationOptions={colorizationState.options}
               validationResult={colorizationState.validationResult}
-              onFileChange={handleFileChange}
+              onFileSelect={handleFileSelect}
               onProcessImage={processImage}
               onDownloadImage={downloadImage}
               onStartOver={startOver}
