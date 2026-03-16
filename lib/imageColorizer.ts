@@ -70,9 +70,19 @@ export class ImageColorizer {
   async loadImage(file: File): Promise<HTMLImageElement> {
     return new Promise((resolve, reject) => {
       const img = new Image();
-      img.onload = () => resolve(img);
-      img.onerror = reject;
-      img.src = URL.createObjectURL(file);
+      const objectUrl = URL.createObjectURL(file);
+
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve(img);
+      };
+
+      img.onerror = (error) => {
+        URL.revokeObjectURL(objectUrl);
+        reject(error);
+      };
+
+      img.src = objectUrl;
     });
   }
 
