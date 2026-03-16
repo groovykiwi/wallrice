@@ -330,12 +330,22 @@ export default function ModernImageColorizer() {
         requestAnimationFrame(() => URL.revokeObjectURL(previousProcessedUrl));
       }
 
-      // Automatically validate color accuracy
-      const validation = colorizer.validateColorAccuracy(activeColors);
-      colorizationDispatch({
-        type: "SET_VALIDATION_RESULT",
-        result: validation,
-      });
+      window.setTimeout(() => {
+        if (processingVersion !== processingInputVersionRef.current) {
+          return;
+        }
+
+        const validation = colorizer.validateColorAccuracy(activeColors);
+
+        if (processingVersion !== processingInputVersionRef.current) {
+          return;
+        }
+
+        colorizationDispatch({
+          type: "SET_VALIDATION_RESULT",
+          result: validation,
+        });
+      }, 0);
     } catch (error) {
       console.error("Error processing image:", error);
     } finally {

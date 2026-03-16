@@ -41,6 +41,8 @@ const LAB_LIGHTNESS_OFFSET = 16.0; // Lightness offset
 // Perceptual color difference thresholds (CIEDE2000 approximation)
 const COLOR_DIFFERENCE_THRESHOLD_AVERAGE = 2.0; // Average acceptable difference
 const COLOR_DIFFERENCE_THRESHOLD_MAX = 5.0; // Maximum acceptable difference
+const VALIDATION_TARGET_SAMPLE_COUNT = 50000;
+const VALIDATION_MIN_PIXEL_STEP = 10;
 
 // Edge detection threshold
 const EDGE_DETECTION_THRESHOLD = 30; // Sobel magnitude threshold for edge detection
@@ -650,10 +652,14 @@ export class ImageColorizer {
     let totalError = 0;
     let maxError = 0;
     let pixelCount = 0;
+    const totalPixels = this.canvas.width * this.canvas.height;
+    const pixelStep = Math.max(
+      VALIDATION_MIN_PIXEL_STEP,
+      Math.ceil(totalPixels / VALIDATION_TARGET_SAMPLE_COUNT)
+    );
 
-    // Sample every 10th pixel for performance
-    for (let i = 0; i < data.length; i += 40) {
-      // 4 * 10 = 40
+    // Sample a bounded number of pixels so validation stays cheap on large images.
+    for (let i = 0; i < data.length; i += pixelStep * 4) {
       if (data[i + 3] === 0) continue; // Skip transparent pixels
 
       const pixelLab = this.rgbToLab(data[i], data[i + 1], data[i + 2]);
