@@ -25,6 +25,7 @@ const DEFAULT_WALLPAPER = "/wallpaper.png";
 const BASE_PALETTE_COLORS = 6;
 export default function ModernImageColorizer() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const processingInputVersionRef = useRef(0);
 
   // Consolidated state using useReducer
   const [colorizationState, colorizationDispatch] = useReducer(
@@ -138,6 +139,16 @@ export default function ModernImageColorizer() {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  useEffect(() => {
+    processingInputVersionRef.current += 1;
+  }, [
+    imageProcessingState.selectedFile,
+    colorSelectionState.selectedPalette,
+    colorSelectionState.activeColors,
+    colorSelectionState.customColors,
+    colorizationState.options,
+  ]);
+
   // Event handlers
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -214,34 +225,34 @@ export default function ModernImageColorizer() {
   };
 
   const processImage = useCallback(async () => {
-    if (
-      !imageProcessingState.selectedFile ||
-      !canvasRef.current ||
-      colorSelectionState.activeColors.length < 1
-    ) {
+    const selectedFile = imageProcessingState.selectedFile;
+    const activeColors = colorSelectionState.activeColors;
+    const options = colorizationState.options;
+    const canvas = canvasRef.current;
+
+    if (!selectedFile || !canvas || activeColors.length < 1) {
       return;
     }
+
+    const processingVersion = processingInputVersionRef.current;
 
     imageProcessingDispatch({ type: "SET_PROCESSING", isProcessing: true });
     colorizationDispatch({ type: "CLEAR_VALIDATION" });
 
     try {
-      const colorizer = new ImageColorizer(canvasRef.current);
-      const image = await colorizer.loadImage(
-        imageProcessingState.selectedFile
-      );
-      colorizer.colorizeImage(
-        image,
-        colorSelectionState.activeColors,
-        colorizationState.options
-      );
+      const colorizer = new ImageColorizer(canvas);
+      const image = await colorizer.loadImage(selectedFile);
+
+      if (processingVersion !== processingInputVersionRef.current) {
+        return;
+      }
+
+      colorizer.colorizeImage(image, activeColors, options);
       const dataURL = colorizer.getDataURL();
       imageProcessingDispatch({ type: "SET_PROCESSED_IMAGE", image: dataURL });
 
       // Automatically validate color accuracy
-      const validation = colorizer.validateColorAccuracy(
-        colorSelectionState.activeColors
-      );
+      const validation = colorizer.validateColorAccuracy(activeColors);
       colorizationDispatch({
         type: "SET_VALIDATION_RESULT",
         result: validation,
