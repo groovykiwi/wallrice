@@ -309,9 +309,16 @@ export default function ModernImageColorizer() {
         return;
       }
 
-      colorizer.colorizeImage(image, activeColors, options, {
+      await colorizer.colorizeImage(image, activeColors, options, {
         maxDimension: processFullResolution ? null : MAX_PROCESSING_DIMENSION,
+        shouldAbort: () =>
+          processingVersion !== processingInputVersionRef.current,
       });
+
+      if (processingVersion !== processingInputVersionRef.current) {
+        return;
+      }
+
       const blob = await colorizer.getBlob();
 
       if (processingVersion !== processingInputVersionRef.current) {
@@ -347,6 +354,13 @@ export default function ModernImageColorizer() {
         });
       }, 0);
     } catch (error) {
+      if (
+        error instanceof Error &&
+        error.name === "ProcessingAbortedError"
+      ) {
+        return;
+      }
+
       console.error("Error processing image:", error);
     } finally {
       imageProcessingDispatch({ type: "SET_PROCESSING", isProcessing: false });

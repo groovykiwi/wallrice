@@ -43,6 +43,8 @@ const COLOR_DIFFERENCE_THRESHOLD_AVERAGE = 2.0; // Average acceptable difference
 const COLOR_DIFFERENCE_THRESHOLD_MAX = 5.0; // Maximum acceptable difference
 const VALIDATION_TARGET_SAMPLE_COUNT = 50000;
 const VALIDATION_MIN_PIXEL_STEP = 10;
+const PROCESSING_TIME_BUDGET_MS = 12;
+const YIELD_CHECK_ROW_INTERVAL = 8;
 
 // Edge detection threshold
 const EDGE_DETECTION_THRESHOLD = 30; // Sobel magnitude threshold for edge detection
@@ -82,6 +84,7 @@ export const getConstrainedDimensions = (
 
 interface ProcessingOptions {
   maxDimension?: number | null;
+  shouldAbort?: () => boolean;
 }
 
 export interface ColorizeOptions {
@@ -90,6 +93,13 @@ export interface ColorizeOptions {
   contrast?: number; // 0-2, contrast multiplier (1 = no change)
   brightness?: number; // -100 to 100, brightness adjustment
   preserveEdges?: boolean; // Whether to apply edge preservation
+}
+
+class ProcessingAbortedError extends Error {
+  constructor() {
+    super("Image processing was aborted.");
+    this.name = "ProcessingAbortedError";
+  }
 }
 
 export class ImageColorizer {
@@ -136,6 +146,17 @@ export class ImageColorizer {
     return (
       LUMINANCE_WEIGHT_R * r + LUMINANCE_WEIGHT_G * g + LUMINANCE_WEIGHT_B * b
     );
+  }
+
+  private async yieldToBrowser(): Promise<void> {
+    await new Promise<void>((resolve) => {
+      if (typeof window !== "undefined" && window.requestAnimationFrame) {
+        window.requestAnimationFrame(() => resolve());
+        return;
+      }
+
+      setTimeout(resolve, 0);
+    });
   }
 
   // Lab color space conversion functions for perceptually accurate processing
@@ -288,11 +309,19 @@ export class ImageColorizer {
   }
 
   // Enhanced edge detection for color bleeding prevention
-  private detectEdges(imageData: ImageData): Uint8Array {
+  private async detectEdges(
+    imageData: ImageData,
+    shouldAbort?: () => boolean
+  ): Promise<Uint8Array> {
     const { width, height, data } = imageData;
     const edges = new Uint8Array(width * height);
+    let lastYieldTime = performance.now();
 
     for (let y = 1; y < height - 1; y++) {
+      if (shouldAbort?.()) {
+        throw new ProcessingAbortedError();
+      }
+
       for (let x = 1; x < width - 1; x++) {
         const idx = (y * width + x) * 4;
 
@@ -343,6 +372,14 @@ export class ImageColorizer {
         const magnitude = Math.sqrt(gx * gx + gy * gy);
 
         edges[y * width + x] = magnitude > EDGE_DETECTION_THRESHOLD ? 255 : 0;
+      }
+
+      if (
+        y % YIELD_CHECK_ROW_INTERVAL === 0 &&
+        performance.now() - lastYieldTime >= PROCESSING_TIME_BUDGET_MS
+      ) {
+        await this.yieldToBrowser();
+        lastYieldTime = performance.now();
       }
     }
 
@@ -456,12 +493,12 @@ export class ImageColorizer {
   }
 
   // Main colorization method using Lab color space for pixel-perfect results
-  colorizeImage(
+  async colorizeImage(
     image: HTMLImageElement,
     selectedColors: string[],
     options: ColorizeOptions = {},
     processingOptions: ProcessingOptions = {}
-  ): void {
+  ): Promise<void> {
     if (selectedColors.length < 1) {
       console.error("Colorize requires at least 1 color.");
       return;
@@ -474,7 +511,10 @@ export class ImageColorizer {
       brightness = 0,
       preserveEdges = true,
     } = options;
-    const { maxDimension = MAX_PROCESSING_DIMENSION } = processingOptions;
+    const {
+      maxDimension = MAX_PROCESSING_DIMENSION,
+      shouldAbort,
+    } = processingOptions;
 
     const sourceWidth = image.naturalWidth || image.width;
     const sourceHeight = image.naturalHeight || image.height;
@@ -504,7 +544,9 @@ export class ImageColorizer {
     const originalData = new Uint8ClampedArray(data);
 
     // Detect edges if edge preservation is enabled
-    const edges = preserveEdges ? this.detectEdges(imageData) : null;
+    const edges = preserveEdges
+      ? await this.detectEdges(imageData, shouldAbort)
+      : null;
 
     // Convert palette to Lab space for perceptually uniform processing
     const palette = selectedColors
@@ -517,114 +559,125 @@ export class ImageColorizer {
 
     const minLightness = palette[0].lightness;
     const maxLightness = palette[palette.length - 1].lightness;
+    let lastYieldTime = performance.now();
 
     // Process each pixel in Lab color space
-    for (let i = 0; i < data.length; i += 4) {
-      const r = data[i];
-      const g = data[i + 1];
-      const b = data[i + 2];
-      const a = data[i + 3];
+    for (let y = 0; y < this.canvas.height; y++) {
+      if (shouldAbort?.()) {
+        throw new ProcessingAbortedError();
+      }
 
-      if (a === 0) continue;
+      const rowOffset = y * this.canvas.width * 4;
 
-      // Check if this pixel is near an edge
-      const pixelIndex = Math.floor(i / 4);
-      const isEdge = edges ? edges[pixelIndex] > 0 : false;
-      const edgeStrength = isEdge ? strength * 0.5 : strength; // Reduce strength near edges
+      for (let x = 0; x < this.canvas.width; x++) {
+        const i = rowOffset + x * 4;
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        const a = data[i + 3];
 
-      // Process in Lab color space for better accuracy
-      const [originalL] = this.rgbToLab(r, g, b);
+        if (a === 0) continue;
 
-      let newR: number, newG: number, newB: number;
+        const pixelIndex = y * this.canvas.width + x;
+        const isEdge = edges ? edges[pixelIndex] > 0 : false;
+        const edgeStrength = isEdge ? strength * 0.5 : strength;
 
-      if (palette.length === 1) {
-        // Single color: maintain luminance, apply target color
-        const targetLab = palette[0].lab;
-        const luminanceRatio = Math.min(
-          originalL / Math.max(targetLab[0], 1),
-          1.0
-        );
+        const [originalL] = this.rgbToLab(r, g, b);
 
-        const newLab: [number, number, number] = [
-          originalL, // Preserve original lightness
-          targetLab[1] * luminanceRatio,
-          targetLab[2] * luminanceRatio,
-        ];
+        let newR: number, newG: number, newB: number;
 
-        [newR, newG, newB] = this.labToRgb(...newLab);
-      } else {
-        // Multiple colors: interpolate in Lab space
-        const clampedLightness = Math.max(
-          minLightness,
-          Math.min(originalL, maxLightness)
-        );
+        if (palette.length === 1) {
+          const targetLab = palette[0].lab;
+          const luminanceRatio = Math.min(
+            originalL / Math.max(targetLab[0], 1),
+            1.0
+          );
 
-        let lowerColor = palette[0];
-        let upperColor = palette[0];
-        for (let j = 0; j < palette.length - 1; j++) {
-          lowerColor = palette[j];
-          upperColor = palette[j + 1];
-          if (
-            clampedLightness >= lowerColor.lightness &&
-            clampedLightness <= upperColor.lightness
-          ) {
-            break;
+          const newLab: [number, number, number] = [
+            originalL,
+            targetLab[1] * luminanceRatio,
+            targetLab[2] * luminanceRatio,
+          ];
+
+          [newR, newG, newB] = this.labToRgb(...newLab);
+        } else {
+          const clampedLightness = Math.max(
+            minLightness,
+            Math.min(originalL, maxLightness)
+          );
+
+          let lowerColor = palette[0];
+          let upperColor = palette[0];
+          for (let j = 0; j < palette.length - 1; j++) {
+            lowerColor = palette[j];
+            upperColor = palette[j + 1];
+            if (
+              clampedLightness >= lowerColor.lightness &&
+              clampedLightness <= upperColor.lightness
+            ) {
+              break;
+            }
           }
+
+          const range = upperColor.lightness - lowerColor.lightness;
+          const amount =
+            range === 0 ? 0 : (clampedLightness - lowerColor.lightness) / range;
+
+          const lowerLab = lowerColor.lab;
+          const upperLab = upperColor.lab;
+          const interpolatedLab: [number, number, number] = [
+            originalL,
+            lowerLab[1] + (upperLab[1] - lowerLab[1]) * amount,
+            lowerLab[2] + (upperLab[2] - lowerLab[2]) * amount,
+          ];
+
+          [newR, newG, newB] = this.labToRgb(...interpolatedLab);
         }
 
-        const range = upperColor.lightness - lowerColor.lightness;
-        const amount =
-          range === 0 ? 0 : (clampedLightness - lowerColor.lightness) / range;
+        if (saturation !== 1.0) {
+          [newR, newG, newB] = this.adjustSaturation(
+            newR,
+            newG,
+            newB,
+            saturation
+          );
+        }
 
-        // Interpolate in Lab space
-        const lowerLab = lowerColor.lab;
-        const upperLab = upperColor.lab;
-        const interpolatedLab: [number, number, number] = [
-          originalL, // Preserve original lightness for better contrast
-          lowerLab[1] + (upperLab[1] - lowerLab[1]) * amount,
-          lowerLab[2] + (upperLab[2] - lowerLab[2]) * amount,
-        ];
+        if (contrast !== 1.0) {
+          [newR, newG, newB] = this.adjustContrast(newR, newG, newB, contrast);
+        }
 
-        [newR, newG, newB] = this.labToRgb(...interpolatedLab);
+        if (brightness !== 0) {
+          [newR, newG, newB] = this.adjustBrightness(
+            newR,
+            newG,
+            newB,
+            brightness
+          );
+        }
+
+        if (edgeStrength < 1.0) {
+          const originalR = originalData[i];
+          const originalG = originalData[i + 1];
+          const originalB = originalData[i + 2];
+
+          newR = Math.round(originalR + (newR - originalR) * edgeStrength);
+          newG = Math.round(originalG + (newG - originalG) * edgeStrength);
+          newB = Math.round(originalB + (newB - originalB) * edgeStrength);
+        }
+
+        data[i] = this.clamp(newR);
+        data[i + 1] = this.clamp(newG);
+        data[i + 2] = this.clamp(newB);
       }
 
-      // Apply additional adjustments
-      if (saturation !== 1.0) {
-        [newR, newG, newB] = this.adjustSaturation(
-          newR,
-          newG,
-          newB,
-          saturation
-        );
+      if (
+        y % YIELD_CHECK_ROW_INTERVAL === 0 &&
+        performance.now() - lastYieldTime >= PROCESSING_TIME_BUDGET_MS
+      ) {
+        await this.yieldToBrowser();
+        lastYieldTime = performance.now();
       }
-
-      if (contrast !== 1.0) {
-        [newR, newG, newB] = this.adjustContrast(newR, newG, newB, contrast);
-      }
-
-      if (brightness !== 0) {
-        [newR, newG, newB] = this.adjustBrightness(
-          newR,
-          newG,
-          newB,
-          brightness
-        );
-      }
-
-      // Blend with original based on edge-aware strength
-      if (edgeStrength < 1.0) {
-        const originalR = originalData[i];
-        const originalG = originalData[i + 1];
-        const originalB = originalData[i + 2];
-
-        newR = Math.round(originalR + (newR - originalR) * edgeStrength);
-        newG = Math.round(originalG + (newG - originalG) * edgeStrength);
-        newB = Math.round(originalB + (newB - originalB) * edgeStrength);
-      }
-
-      data[i] = this.clamp(newR);
-      data[i + 1] = this.clamp(newG);
-      data[i + 2] = this.clamp(newB);
     }
 
     this.ctx.putImageData(imageData, 0, 0);
