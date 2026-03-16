@@ -1,5 +1,5 @@
 import type React from "react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Upload,
   Download,
@@ -9,7 +9,10 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { colorPalettes } from "../lib/colorPalettes";
-import { ColorizeOptions } from "../lib/imageColorizer";
+import {
+  ColorizeOptions,
+  getConstrainedDimensions,
+} from "../lib/imageColorizer";
 
 interface ImageUploadPanelProps {
   selectedFile: File | null;
@@ -17,6 +20,7 @@ interface ImageUploadPanelProps {
   selectedPalette: string;
   isProcessing: boolean;
   canProcess: boolean;
+  processFullResolution: boolean;
   showAdvancedSettings: boolean;
   colorizationOptions: ColorizeOptions;
   validationResult: {
@@ -28,6 +32,7 @@ interface ImageUploadPanelProps {
   onProcessImage: () => void;
   onDownloadImage: () => void;
   onStartOver: () => void;
+  onProcessFullResolutionChange: (enabled: boolean) => void;
   onToggleAdvancedSettings: () => void;
   onUpdateOption: (key: keyof ColorizeOptions, value: number | boolean) => void;
   onResetOptions: () => void;
@@ -39,6 +44,7 @@ export function ImageUploadPanel({
   selectedPalette,
   isProcessing,
   canProcess,
+  processFullResolution,
   showAdvancedSettings,
   colorizationOptions,
   validationResult,
@@ -46,6 +52,7 @@ export function ImageUploadPanel({
   onProcessImage,
   onDownloadImage,
   onStartOver,
+  onProcessFullResolutionChange,
   onToggleAdvancedSettings,
   onUpdateOption,
   onResetOptions,
@@ -53,6 +60,10 @@ export function ImageUploadPanel({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [selectedImageSize, setSelectedImageSize] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
 
   const handleDragEvent = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -98,6 +109,35 @@ export function ImageUploadPanel({
     onFileSelect(event.target.files?.[0] ?? null);
   };
 
+  useEffect(() => {
+    if (!selectedFile) {
+      setSelectedImageSize(null);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(selectedFile);
+    const image = new Image();
+
+    image.onload = () => {
+      setSelectedImageSize({
+        width: image.naturalWidth || image.width,
+        height: image.naturalHeight || image.height,
+      });
+      URL.revokeObjectURL(objectUrl);
+    };
+
+    image.onerror = () => {
+      setSelectedImageSize(null);
+      URL.revokeObjectURL(objectUrl);
+    };
+
+    image.src = objectUrl;
+
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [selectedFile]);
+
   const handleStartOver = () => {
     onStartOver();
     setIsDragging(false);
@@ -127,6 +167,10 @@ export function ImageUploadPanel({
       Colorize
     </>
   );
+  const processingSize = selectedImageSize
+    ? getConstrainedDimensions(selectedImageSize.width, selectedImageSize.height)
+    : null;
+  const shouldShowResizeNotice = processingSize?.isConstrained;
 
   return (
     <div className="space-y-6 p-8 rounded-xl shadow-md self-start">
@@ -175,6 +219,35 @@ export function ImageUploadPanel({
             className="hidden"
           />
         </div>
+
+        {shouldShowResizeNotice && selectedImageSize && processingSize && (
+          <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-3">
+            <p className="text-sm text-amber-900">
+              Large image detected ({selectedImageSize.width} x{" "}
+              {selectedImageSize.height}).
+              {processFullResolution
+                ? " Full-resolution processing will keep the original size."
+                : ` Processing will resize it to ${processingSize.width} x ${processingSize.height} for speed.`}
+            </p>
+            <label className="flex items-start gap-3 text-sm text-amber-950">
+              <input
+                type="checkbox"
+                checked={processFullResolution}
+                onChange={(event) =>
+                  onProcessFullResolutionChange(event.target.checked)
+                }
+                className="mt-0.5 h-4 w-4 rounded border-amber-300 text-amber-700 focus:ring-amber-500"
+              />
+              <span>
+                Process full resolution
+                <span className="block text-xs text-amber-800">
+                  This can take a while, and the tab may briefly look like it
+                  stopped working while the browser is busy.
+                </span>
+              </span>
+            </label>
+          </div>
+        )}
 
         {/* Action Buttons Container */}
         <div className="flex gap-3 flex-col pt-4">

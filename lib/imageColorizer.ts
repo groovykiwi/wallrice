@@ -50,6 +50,38 @@ const LUMINANCE_WEIGHT_R = 0.2126;
 const LUMINANCE_WEIGHT_G = 0.7152;
 const LUMINANCE_WEIGHT_B = 0.0722;
 
+export const MAX_PROCESSING_DIMENSION = 4096;
+
+export const getConstrainedDimensions = (
+  width: number,
+  height: number,
+  maxDimension: number = MAX_PROCESSING_DIMENSION
+) => {
+  const largestDimension = Math.max(width, height);
+
+  if (largestDimension <= maxDimension) {
+    return {
+      width,
+      height,
+      scale: 1,
+      isConstrained: false,
+    };
+  }
+
+  const scale = maxDimension / largestDimension;
+
+  return {
+    width: Math.max(1, Math.round(width * scale)),
+    height: Math.max(1, Math.round(height * scale)),
+    scale,
+    isConstrained: true,
+  };
+};
+
+interface ProcessingOptions {
+  maxDimension?: number | null;
+}
+
 export interface ColorizeOptions {
   strength?: number; // 0-1, how much to blend with original (1 = full colorization)
   saturation?: number; // 0-2, saturation multiplier (1 = no change)
@@ -425,7 +457,8 @@ export class ImageColorizer {
   colorizeImage(
     image: HTMLImageElement,
     selectedColors: string[],
-    options: ColorizeOptions = {}
+    options: ColorizeOptions = {},
+    processingOptions: ProcessingOptions = {}
   ): void {
     if (selectedColors.length < 1) {
       console.error("Colorize requires at least 1 color.");
@@ -439,10 +472,23 @@ export class ImageColorizer {
       brightness = 0,
       preserveEdges = true,
     } = options;
+    const { maxDimension = MAX_PROCESSING_DIMENSION } = processingOptions;
 
-    this.canvas.width = image.width;
-    this.canvas.height = image.height;
-    this.ctx.drawImage(image, 0, 0);
+    const sourceWidth = image.naturalWidth || image.width;
+    const sourceHeight = image.naturalHeight || image.height;
+    const processingSize =
+      maxDimension == null
+        ? {
+            width: sourceWidth,
+            height: sourceHeight,
+            scale: 1,
+            isConstrained: false,
+          }
+        : getConstrainedDimensions(sourceWidth, sourceHeight, maxDimension);
+
+    this.canvas.width = processingSize.width;
+    this.canvas.height = processingSize.height;
+    this.ctx.drawImage(image, 0, 0, processingSize.width, processingSize.height);
 
     const imageData = this.ctx.getImageData(
       0,

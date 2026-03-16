@@ -1,9 +1,12 @@
 "use client";
 
 import type React from "react";
-import { useReducer, useRef, useCallback, useEffect } from "react";
+import { useReducer, useRef, useCallback, useEffect, useState } from "react";
 import { colorPalettes } from "../lib/colorPalettes";
-import { ImageColorizer } from "../lib/imageColorizer";
+import {
+  ImageColorizer,
+  MAX_PROCESSING_DIMENSION,
+} from "../lib/imageColorizer";
 import { MacBookPreview } from "../components/MacBookPreview";
 import { HeroSection } from "../components/HeroSection";
 import { ImageUploadPanel } from "../components/ImageUploadPanel";
@@ -34,6 +37,7 @@ export default function ModernImageColorizer() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const originalWallpaperObjectUrlRef = useRef<string | null>(null);
   const processingInputVersionRef = useRef(0);
+  const [processFullResolution, setProcessFullResolution] = useState(false);
 
   // Consolidated state using useReducer
   const [colorizationState, colorizationDispatch] = useReducer(
@@ -166,11 +170,13 @@ export default function ModernImageColorizer() {
     colorSelectionState.activeColors,
     colorSelectionState.customColors,
     colorizationState.options,
+    processFullResolution,
   ]);
 
   // Event handlers
   const handleFileSelect = (file: File | null) => {
     if (file && file.type.startsWith("image/")) {
+      setProcessFullResolution(false);
       imageProcessingDispatch({ type: "SET_FILE", file });
       imageProcessingDispatch({ type: "SET_PROCESSED_IMAGE", image: null });
       colorizationDispatch({ type: "CLEAR_VALIDATION" });
@@ -289,7 +295,9 @@ export default function ModernImageColorizer() {
         return;
       }
 
-      colorizer.colorizeImage(image, activeColors, options);
+      colorizer.colorizeImage(image, activeColors, options, {
+        maxDimension: processFullResolution ? null : MAX_PROCESSING_DIMENSION,
+      });
       const dataURL = colorizer.getDataURL();
       imageProcessingDispatch({ type: "SET_PROCESSED_IMAGE", image: dataURL });
 
@@ -308,6 +316,7 @@ export default function ModernImageColorizer() {
     imageProcessingState.selectedFile,
     colorSelectionState.activeColors,
     colorizationState.options,
+    processFullResolution,
   ]);
 
   const downloadImage = () => {
@@ -327,6 +336,7 @@ export default function ModernImageColorizer() {
   };
 
   const startOver = () => {
+    setProcessFullResolution(false);
     imageProcessingDispatch({ type: "RESET_PROCESSING" });
     colorizationDispatch({ type: "CLEAR_VALIDATION" });
   };
@@ -374,10 +384,12 @@ export default function ModernImageColorizer() {
               showAdvancedSettings={colorizationState.showAdvancedSettings}
               colorizationOptions={colorizationState.options}
               validationResult={colorizationState.validationResult}
+              processFullResolution={processFullResolution}
               onFileSelect={handleFileSelect}
               onProcessImage={processImage}
               onDownloadImage={downloadImage}
               onStartOver={startOver}
+              onProcessFullResolutionChange={setProcessFullResolution}
               onToggleAdvancedSettings={() =>
                 colorizationDispatch({ type: "TOGGLE_ADVANCED_SETTINGS" })
               }
