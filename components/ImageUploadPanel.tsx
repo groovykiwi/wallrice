@@ -16,6 +16,7 @@ interface ImageUploadPanelProps {
   processedImage: string | null;
   selectedPalette: string;
   isProcessing: boolean;
+  canProcess: boolean;
   showAdvancedSettings: boolean;
   colorizationOptions: ColorizeOptions;
   validationResult: {
@@ -36,6 +37,7 @@ export function ImageUploadPanel({
   processedImage,
   selectedPalette,
   isProcessing,
+  canProcess,
   showAdvancedSettings,
   colorizationOptions,
   validationResult,
@@ -154,11 +156,11 @@ export function ImageUploadPanel({
           {/* Main action button: Upload -> Process -> Colorize More */}
           <button
             onClick={onProcessImage}
-            disabled={!selectedFile || isProcessing}
+            disabled={!canProcess}
             className="flex-1 text-white font-medium py-3 px-6 rounded-lg text-base flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
             style={{
               backgroundColor:
-                selectedFile && !isProcessing
+                canProcess
                   ? colorPalettes[selectedPalette].colors.primary
                   : colorPalettes[selectedPalette].colors.muted,
             }}
@@ -178,10 +180,18 @@ export function ImageUploadPanel({
                 <Sparkles className="w-4 h-4" />
                 Colorize
               </>
+            ) : selectedFile ? (
+              "Select at least one color"
             ) : (
               "Upload an image first"
             )}
           </button>
+
+          {selectedFile && !isProcessing && !canProcess && (
+            <p className="text-sm text-slate-500">
+              Select at least one color to start colorizing.
+            </p>
+          )}
 
           {/* This block appears after success, containing all subsequent actions. */}
           {processedImage && !isProcessing && (

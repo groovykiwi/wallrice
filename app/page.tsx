@@ -197,6 +197,10 @@ export default function ModernImageColorizer() {
         ? "This custom color has already been added."
         : null
       : "Enter a full 6-digit hex color like #aabbcc.";
+  const canProcessImage =
+    !!imageProcessingState.selectedFile &&
+    colorSelectionState.activeColors.length > 0 &&
+    !imageProcessingState.isProcessing;
 
   const handleColorSelection = (colorHex: string) => {
     colorSelectionDispatch({
@@ -362,6 +366,7 @@ export default function ModernImageColorizer() {
               processedImage={imageProcessingState.processedImage}
               selectedPalette={colorSelectionState.selectedPalette}
               isProcessing={imageProcessingState.isProcessing}
+              canProcess={canProcessImage}
               showAdvancedSettings={colorizationState.showAdvancedSettings}
               colorizationOptions={colorizationState.options}
               validationResult={colorizationState.validationResult}
