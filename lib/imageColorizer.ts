@@ -678,7 +678,23 @@ export class ImageColorizer {
     return { averageError, maxError, isAccurate };
   }
 
-  getDataURL(): string {
-    return this.canvas.toDataURL();
+  async getBlob(
+    type: string = "image/png",
+    quality?: number
+  ): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+      this.canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            resolve(blob);
+            return;
+          }
+
+          reject(new Error("Failed to export processed image."));
+        },
+        type,
+        quality
+      );
+    });
   }
 }

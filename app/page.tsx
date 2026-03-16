@@ -36,6 +36,7 @@ const isValidHexColor = (value: string) =>
 export default function ModernImageColorizer() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const originalWallpaperObjectUrlRef = useRef<string | null>(null);
+  const processedWallpaperObjectUrlRef = useRef<string | null>(null);
   const processingInputVersionRef = useRef(0);
   const [processFullResolution, setProcessFullResolution] = useState(false);
 
@@ -128,6 +129,14 @@ export default function ModernImageColorizer() {
     imageProcessingState.originalWallpaperUrl,
   ]);
 
+  useEffect(() => {
+    return () => {
+      if (processedWallpaperObjectUrlRef.current) {
+        URL.revokeObjectURL(processedWallpaperObjectUrlRef.current);
+      }
+    };
+  }, []);
+
   // Update active colors when palette changes
   useEffect(() => {
     const currentPalette = colorPalettes[colorSelectionState.selectedPalette];
@@ -178,7 +187,12 @@ export default function ModernImageColorizer() {
     if (file && file.type.startsWith("image/")) {
       setProcessFullResolution(false);
       imageProcessingDispatch({ type: "SET_FILE", file });
+      const previousProcessedUrl = processedWallpaperObjectUrlRef.current;
+      processedWallpaperObjectUrlRef.current = null;
       imageProcessingDispatch({ type: "SET_PROCESSED_IMAGE", image: null });
+      if (previousProcessedUrl) {
+        requestAnimationFrame(() => URL.revokeObjectURL(previousProcessedUrl));
+      }
       colorizationDispatch({ type: "CLEAR_VALIDATION" });
     }
   };
@@ -298,8 +312,23 @@ export default function ModernImageColorizer() {
       colorizer.colorizeImage(image, activeColors, options, {
         maxDimension: processFullResolution ? null : MAX_PROCESSING_DIMENSION,
       });
-      const dataURL = colorizer.getDataURL();
-      imageProcessingDispatch({ type: "SET_PROCESSED_IMAGE", image: dataURL });
+      const blob = await colorizer.getBlob();
+
+      if (processingVersion !== processingInputVersionRef.current) {
+        return;
+      }
+
+      const processedImageUrl = URL.createObjectURL(blob);
+      const previousProcessedUrl = processedWallpaperObjectUrlRef.current;
+      processedWallpaperObjectUrlRef.current = processedImageUrl;
+      imageProcessingDispatch({
+        type: "SET_PROCESSED_IMAGE",
+        image: processedImageUrl,
+      });
+
+      if (previousProcessedUrl) {
+        requestAnimationFrame(() => URL.revokeObjectURL(previousProcessedUrl));
+      }
 
       // Automatically validate color accuracy
       const validation = colorizer.validateColorAccuracy(activeColors);
@@ -337,8 +366,13 @@ export default function ModernImageColorizer() {
 
   const startOver = () => {
     setProcessFullResolution(false);
+    const previousProcessedUrl = processedWallpaperObjectUrlRef.current;
+    processedWallpaperObjectUrlRef.current = null;
     imageProcessingDispatch({ type: "RESET_PROCESSING" });
     colorizationDispatch({ type: "CLEAR_VALIDATION" });
+    if (previousProcessedUrl) {
+      requestAnimationFrame(() => URL.revokeObjectURL(previousProcessedUrl));
+    }
   };
 
   return (
