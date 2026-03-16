@@ -27,14 +27,11 @@ export default function ModernImageColorizer() {
         </div>
       </div>
 
-      {/* Advanced Control Panel */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
-        <div className=" border-slate-200/50 ">
-          <div className="grid lg:grid-cols-3 gap-8">
-            <ImageUploadPanel {...uploadPanelProps} />
-
-            <ColorSelectionPanel {...colorSelectionPanelProps} />
-          </div>
+      {/* Main Control Panel */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 pt-8 border-t border-slate-200 mt-8">
+        <div className="grid lg:grid-cols-3 gap-12 lg:gap-16">
+          <ImageUploadPanel {...uploadPanelProps} />
+          <ColorSelectionPanel {...colorSelectionPanelProps} />
         </div>
       </div>
 

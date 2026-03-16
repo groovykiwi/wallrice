@@ -173,7 +173,7 @@ export function ImageUploadPanel({
   const shouldShowResizeNotice = processingSize?.isConstrained;
 
   return (
-    <div className="space-y-6 p-8 rounded-xl shadow-md self-start">
+    <div className="space-y-6 self-start">
       <div>
         <span className="text-lg font-semibold text-slate-800 mb-3 block">
           Image Upload
@@ -181,7 +181,7 @@ export function ImageUploadPanel({
         <div className="space-y-4">
           <div
             ref={dropZoneRef}
-            className={`w-full h-16 border-2 border-dashed transition-all flex items-center gap-3 rounded-xl text-lg font-medium px-4 cursor-pointer ${
+            className={`w-full h-16 border-2 border-dashed transition-all flex items-center gap-3 rounded-lg text-lg font-medium px-4 cursor-pointer ${
               isDragging
                 ? "border-blue-500 bg-blue-50 text-blue-700"
                 : "border-slate-300 hover:border-slate-400 hover:bg-slate-50 text-slate-700"
@@ -443,7 +443,7 @@ export function ImageUploadPanel({
                   onChange={(e) =>
                     onUpdateOption("preserveEdges", e.target.checked)
                   }
-                  className="w-4 h-4 text-purple-600 focus:ring-purple-500 border-slate-300 rounded"
+                  className="w-4 h-4 text-slate-900 focus:ring-slate-900 border-slate-300 rounded"
                   title="Prevent colors from bleeding across object boundaries"
                 />
               </div>

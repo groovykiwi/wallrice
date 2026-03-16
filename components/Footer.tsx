@@ -11,7 +11,7 @@ export function Footer() {
               href="https://nathvn.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-slate-800 underline decoration-dotted hover:text-purple-600 font-medium transition-colors"
+              className="text-slate-800 underline decoration-dotted hover:text-slate-900 font-medium transition-colors"
             >
               Nathan
             </a>

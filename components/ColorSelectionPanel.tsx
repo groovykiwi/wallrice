@@ -42,8 +42,8 @@ export function ColorSelectionPanel({
   onSelectAllColors,
 }: ColorSelectionPanelProps) {
   return (
-    <div className="lg:col-span-2 space-y-6 p-8 rounded-xl shadow-md self-start">
-      <div className="flex items-start  md:items-center justify-between flex-col md:flex-row ">
+    <div className="lg:col-span-2 space-y-8 self-start">
+      <div className="flex items-start md:items-center justify-between flex-col md:flex-row">
         <span className="text-lg font-semibold text-slate-800 mb-4 md:mb-0 ">
           Color Selection ({activeColors.length}/{MAX_COLORS})
         </span>
@@ -89,7 +89,7 @@ export function ColorSelectionPanel({
         <select
           value={selectedPalette}
           onChange={(e) => onPaletteChange(e.target.value)}
-          className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          className="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent"
         >
           {Object.entries(colorPalettes).map(([key, palette]) => (
             <option key={key} value={key}>
@@ -112,10 +112,10 @@ export function ColorSelectionPanel({
                 <div key={name} className="text-center">
                   <button
                     onClick={() => onColorSelection(colorHex)}
-                    className={`w-12 h-12 rounded-xl border-3 transition-all hover:scale-110 hover:shadow-lg relative ${
+                    className={`w-12 h-12 rounded-lg border-2 transition-all relative ${
                       isSelected
-                        ? "border-slate-800 shadow-lg scale-105"
-                        : "border-slate-300 hover:border-slate-400"
+                        ? "border-slate-900 ring-2 ring-slate-900/20 ring-offset-2"
+                        : "border-slate-200 hover:border-slate-400 hover:ring-2 hover:ring-slate-400/20 hover:ring-offset-2"
                     }`}
                     style={{ backgroundColor: colorHex }}
                     title={colorHex}
@@ -193,7 +193,7 @@ export function ColorSelectionPanel({
               value={customColorInput}
               onChange={(e) => onCustomColorInputChange(e.target.value)}
               placeholder="#ffffff"
-              className="flex-1 bg-white border border-slate-300 rounded px-2 py-1 text-slate-700 focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-transparent font-mono text-sm"
+              className="flex-1 bg-white border border-slate-300 rounded px-2 py-1 text-slate-700 focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-transparent font-mono text-sm"
             />
             <button
               onClick={onAddCustomColor}
@@ -222,10 +222,10 @@ export function ColorSelectionPanel({
                 <div key={color} className="text-center relative">
                   <button
                     onClick={() => onColorSelection(color)}
-                    className={`w-12 h-12 rounded-xl border-3 transition-all hover:scale-110 hover:shadow-lg relative ${
+                    className={`w-12 h-12 rounded-lg border-2 transition-all relative ${
                       isSelected
-                        ? "border-slate-800 shadow-lg scale-105"
-                        : "border-slate-300 hover:border-slate-400"
+                        ? "border-slate-900 ring-2 ring-slate-900/20 ring-offset-2"
+                        : "border-slate-200 hover:border-slate-400 hover:ring-2 hover:ring-slate-400/20 hover:ring-offset-2"
                     }`}
                     style={{ backgroundColor: color }}
                     title={color}

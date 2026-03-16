@@ -16,41 +16,34 @@ export function HeroSection({
 }: HeroSectionProps) {
   return (
     <>
-      {/* Modern Hero Section */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))]" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-0">
-          <div className="text-center">
-            <div className="flex items-center justify-center mb-2">
-              <h1 className=" text-4xl md:text-7xl font-bold text-slate-900 tracking-tight">
-                Wall
-                <span
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"
-                  style={{
-                    color: colorPalettes[selectedPalette].colors.primary,
-                  }}
-                >
-                  Rice
-                </span>
-              </h1>
-            </div>
-            <p className="text-base md:text-xl text-slate-600 mb-4 max-w-3xl mx-auto leading-relaxed">
-              A small utility to colorize your wallpapers with your own color
-              palettes.
-            </p>
-          </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8">
+        <div className="flex flex-col items-center text-center gap-4">
+          <h1 className="text-4xl md:text-6xl font-bold font-mono text-slate-900 tracking-tight">
+            Wall
+            <span
+              style={{
+                color: colorPalettes[selectedPalette].colors.primary,
+              }}
+            >
+              Rice
+            </span>
+          </h1>
+          <p className="text-base md:text-lg text-slate-600 max-w-2xl leading-relaxed">
+            A small utility to colorize your wallpapers with your own color
+            palettes.
+          </p>
         </div>
       </div>
 
       {/* OS Toggle Button */}
-      <div className=" z-50 w-full  justify-center mb-6 mt-0 px-4 hidden md:flex">
-        <div className="flex bg-white/20 backdrop-blur-md rounded-lg p-1 border border-white/20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8 hidden md:flex justify-center">
+        <div className="flex bg-slate-50 rounded-lg p-1 border border-slate-200">
           <button
             onClick={() => onOSChange("macos")}
-            className={`flex items-center cursor-pointer gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`flex items-center cursor-pointer gap-2 px-3 py-1.5 rounded-md text-sm transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0 select-none ${
               osMode === "macos"
-                ? "bg-white/30 text-black shadow-sm"
-                : "text-black/70"
+                ? "bg-white text-slate-900 shadow-sm border border-slate-200/50"
+                : "text-slate-600 hover:text-slate-900 border border-transparent"
             }`}
           >
             <Image
@@ -58,16 +51,16 @@ export function HeroSection({
               alt="macOS"
               width={12}
               height={12}
-              className="w-3 h-3"
+              className="w-3 h-3 opacity-80"
             />
             macOS
           </button>
           <button
             onClick={() => onOSChange("linux")}
-            className={`flex items-center cursor-pointer gap-2 ml-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`flex items-center cursor-pointer gap-2 px-3 py-1.5 rounded-md text-sm transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0 select-none ${
               osMode === "linux"
-                ? "bg-white/30 text-black shadow-sm"
-                : "text-black/70"
+                ? "bg-white text-slate-900 shadow-sm border border-slate-200/50"
+                : "text-slate-600 hover:text-slate-900 border border-transparent"
             }`}
           >
             <Image
@@ -75,16 +68,16 @@ export function HeroSection({
               alt="Linux"
               width={12}
               height={12}
-              className="w-3 h-3"
+              className="w-3 h-3 opacity-80"
             />
             Linux
           </button>
           <button
             onClick={() => onOSChange("windows11")}
-            className={`flex items-center cursor-pointer gap-2 ml-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`flex items-center cursor-pointer gap-2 px-3 py-1.5 rounded-md text-sm transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0 select-none ${
               osMode === "windows11"
-                ? "bg-white/30 text-black shadow-sm"
-                : "text-black/70"
+                ? "bg-white text-slate-900 shadow-sm border border-slate-200/50"
+                : "text-slate-600 hover:text-slate-900 border border-transparent"
             }`}
           >
             <Image
@@ -92,7 +85,7 @@ export function HeroSection({
               alt="Windows 11"
               width={12}
               height={12}
-              className="w-3 h-3"
+              className="w-3 h-3 opacity-80"
             />
             Windows 11
           </button>
