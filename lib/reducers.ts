@@ -245,7 +245,6 @@ export type UIAction =
   | { type: "SET_UI_HIDDEN"; hidden: boolean }
   | { type: "TOGGLE_UI" }
   | { type: "SET_OS_MODE"; osMode: OSMode }
-  | { type: "CYCLE_OS" }
   | { type: "SET_MOBILE"; isMobile: boolean };
 
 export const uiReducer = (state: UIState, action: UIAction): UIState => {
@@ -264,17 +263,6 @@ export const uiReducer = (state: UIState, action: UIAction): UIState => {
       return {
         ...state,
         osMode: action.osMode,
-      };
-    case "CYCLE_OS":
-      const nextOSMode: OSMode =
-        state.osMode === "macos"
-          ? "linux"
-          : state.osMode === "linux"
-          ? "windows11"
-          : "macos";
-      return {
-        ...state,
-        osMode: nextOSMode,
       };
     case "SET_MOBILE":
       return {

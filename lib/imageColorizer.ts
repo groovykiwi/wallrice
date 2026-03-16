@@ -632,33 +632,7 @@ export class ImageColorizer {
     return { averageError, maxError, isAccurate };
   }
 
-  // Reset to original image
-  resetToOriginal(image: HTMLImageElement): void {
-    this.canvas.width = image.width;
-    this.canvas.height = image.height;
-    this.ctx.drawImage(image, 0, 0);
-  }
-
   getDataURL(): string {
     return this.canvas.toDataURL();
-  }
-
-  // Performance optimization: process image in chunks for large images
-  async colorizeImageAsync(
-    image: HTMLImageElement,
-    selectedColors: string[],
-    options: ColorizeOptions = {},
-    onProgress?: (progress: number) => void
-  ): Promise<void> {
-    return new Promise((resolve) => {
-      const processChunk = () => {
-        this.colorizeImage(image, selectedColors, options);
-        onProgress?.(100);
-        resolve();
-      };
-
-      // Start processing
-      setTimeout(processChunk, 0);
-    });
   }
 }
