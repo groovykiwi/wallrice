@@ -5,6 +5,7 @@ import { HeroSection } from "../components/HeroSection";
 import { ImageUploadPanel } from "../components/ImageUploadPanel";
 import { ColorSelectionPanel } from "../components/ColorSelectionPanel";
 import { Footer } from "../components/Footer";
+import { ComparisonPreview } from "../components/ComparisonPreview";
 import { useWallriceController } from "../hooks/useWallriceController";
 
 export default function ModernImageColorizer() {
@@ -31,7 +32,16 @@ export default function ModernImageColorizer() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 pt-8 border-t border-slate-200 mt-8">
         <div className="grid lg:grid-cols-3 gap-12 lg:gap-16">
           <ImageUploadPanel {...uploadPanelProps} />
-          <ColorSelectionPanel {...colorSelectionPanelProps} />
+          <div className="lg:col-span-2 space-y-8">
+            <ColorSelectionPanel {...colorSelectionPanelProps} />
+            {previewProps.originalWallpaperUrl &&
+              uploadPanelProps.processedImage && (
+                <ComparisonPreview
+                  originalImageUrl={previewProps.originalWallpaperUrl}
+                  processedImageUrl={uploadPanelProps.processedImage}
+                />
+              )}
+          </div>
         </div>
       </div>
 
