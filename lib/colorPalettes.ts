@@ -110,6 +110,28 @@ export const colorPalettes: Record<string, ColorPalette> = {
       muted: "#5C6773",
     },
   },
+  flexokiLight: {
+    name: "Flexoki Light",
+    colors: {
+      background: "#FFFCF0",
+      foreground: "#100F0F",
+      primary: "#205EA6",
+      secondary: "#66800B",
+      accent: "#AF3029",
+      muted: "#B7B5AC",
+    },
+  },
+  flexokiDark: {
+    name: "Flexoki Dark",
+    colors: {
+      background: "#100F0F",
+      foreground: "#CECDC3",
+      primary: "#4385BE",
+      secondary: "#879A39",
+      accent: "#D14D41",
+      muted: "#575653",
+    },
+  },
   gruvboxMaterial: {
     name: "Gruvbox Material",
     colors: {
