@@ -11,6 +11,8 @@ import {
 import { colorPalettes } from "../lib/colorPalettes";
 import {
   ColorizeOptions,
+  ColorizeMode,
+  ColorizeOptionValue,
   getConstrainedDimensions,
 } from "../lib/imageColorizer";
 
@@ -34,9 +36,34 @@ interface ImageUploadPanelProps {
   onStartOver: () => void;
   onProcessFullResolutionChange: (enabled: boolean) => void;
   onToggleAdvancedSettings: () => void;
-  onUpdateOption: (key: keyof ColorizeOptions, value: number | boolean) => void;
+  onUpdateOption: (
+    key: keyof ColorizeOptions,
+    value: ColorizeOptionValue
+  ) => void;
   onResetOptions: () => void;
 }
+
+const colorizeModes: Array<{
+  value: ColorizeMode;
+  label: string;
+  title: string;
+}> = [
+  {
+    value: "toneMap",
+    label: "Tone Map",
+    title: "Preserve source lightness and map tones through the palette",
+  },
+  {
+    value: "paletteMap",
+    label: "Palette Map",
+    title: "Softly blend toward the nearest selected palette colors",
+  },
+  {
+    value: "moodMatch",
+    label: "Mood Match",
+    title: "Remap the image lightness range into the selected palette range",
+  },
+];
 
 export function ImageUploadPanel({
   selectedFile,
@@ -369,6 +396,33 @@ export function ImageUploadPanel({
               </button>
             </div>
 
+            {/* Processing Mode */}
+            <div className="space-y-2">
+              <label className="text-sm text-slate-600">Mode</label>
+              <div className="grid grid-cols-3 rounded-lg border border-slate-200 bg-slate-100 p-1">
+                {colorizeModes.map((mode) => {
+                  const isSelected =
+                    (colorizationOptions.mode ?? "toneMap") === mode.value;
+
+                  return (
+                    <button
+                      key={mode.value}
+                      type="button"
+                      onClick={() => onUpdateOption("mode", mode.value)}
+                      title={mode.title}
+                      className={`min-h-9 rounded-md px-2 text-xs font-medium transition-colors ${
+                        isSelected
+                          ? "bg-white text-slate-900 shadow-sm"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      {mode.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Saturation */}
             <div className="space-y-2">
               <div className="flex justify-between">
@@ -472,13 +526,13 @@ export function ImageUploadPanel({
                   </div>
                   <div className="text-xs text-slate-500 space-y-1">
                     <div>
-                      Avg Error: {validationResult.averageError.toFixed(2)} ΔE
+                      Avg Error: {validationResult.averageError.toFixed(3)}
                     </div>
                     <div>
-                      Max Error: {validationResult.maxError.toFixed(2)} ΔE
+                      Max Error: {validationResult.maxError.toFixed(3)}
                     </div>
                     <div className="text-xs text-slate-400">
-                      (Lower is better, &lt;2.0 = imperceptible difference)
+                      OKLab distance
                     </div>
                   </div>
                 </div>

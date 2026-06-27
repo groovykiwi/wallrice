@@ -33,7 +33,7 @@ WallRice uses a locally-executed image processing engine powered by the browser'
 1.  **Clone the repository**
 
     ```bash
-    git clone git@github.com:groovykiwi/wallrice.git
+    git clone git@github.com:nathanhoulamy/wallrice.git
     cd wallrice
     ```
 

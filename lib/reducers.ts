@@ -1,4 +1,4 @@
-import { ColorizeOptions } from "./imageColorizer";
+import { ColorizeOptions, ColorizeOptionValue } from "./imageColorizer";
 
 // Colorization state and actions
 export interface ColorizationState {
@@ -15,7 +15,7 @@ export type ColorizationAction =
   | {
       type: "UPDATE_OPTION";
       key: keyof ColorizeOptions;
-      value: number | boolean;
+      value: ColorizeOptionValue;
     }
   | { type: "RESET_OPTIONS" }
   | { type: "TOGGLE_ADVANCED_SETTINGS" }
@@ -43,6 +43,7 @@ export const colorizationReducer = (
       return {
         ...state,
         options: {
+          mode: "toneMap",
           strength: 1.0,
           saturation: 1.0,
           contrast: 1.0,

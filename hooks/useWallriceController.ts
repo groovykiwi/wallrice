@@ -6,6 +6,7 @@ import {
   ImageColorizer,
   MAX_PROCESSING_DIMENSION,
   type ColorizeOptions,
+  type ColorizeOptionValue,
 } from "../lib/imageColorizer";
 import {
   colorizationReducer,
@@ -56,6 +57,7 @@ export const useWallriceController = () => {
     colorizationReducer,
     {
       options: {
+        mode: "toneMap",
         strength: 1.0,
         saturation: 1.0,
         contrast: 1.0,
@@ -423,7 +425,7 @@ export const useWallriceController = () => {
         colorizationDispatch({ type: "TOGGLE_ADVANCED_SETTINGS" }),
       onUpdateOption: (
         key: keyof ColorizeOptions,
-        value: number | boolean
+        value: ColorizeOptionValue
       ) =>
         colorizationDispatch({ type: "UPDATE_OPTION", key, value }),
       onResetOptions: () => colorizationDispatch({ type: "RESET_OPTIONS" }),

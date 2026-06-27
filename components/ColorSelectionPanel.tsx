@@ -132,7 +132,7 @@ export function ColorSelectionPanel({
                   </div>
                 </div>
               );
-            }
+            },
           )}
         </div>
       </div>
@@ -153,7 +153,7 @@ export function ColorSelectionPanel({
           <span className="block mt-4 text-xs text-slate-500">
             Don&apos;t see your favorite palette? Create a pull request on{" "}
             <a
-              href="https://github.com/groovykiwi/wallrice"
+              href="https://github.com/nathanhoulamy/wallrice"
               target="_blank"
               rel="noopener noreferrer"
               className="underline font-semibold transition-colors"

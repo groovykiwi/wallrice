@@ -62,14 +62,30 @@ interface ProcessingOptions {
 
 type OklabColor = [number, number, number];
 type OklchColor = [number, number, number];
+type PaletteEntry = {
+  oklab: OklabColor;
+  oklch: OklchColor;
+  lightness: number;
+};
+type LightnessRange = {
+  min: number;
+  max: number;
+};
+
+export type ColorizeMode = "toneMap" | "paletteMap" | "moodMatch";
 
 export interface ColorizeOptions {
+  mode?: ColorizeMode;
   strength?: number; // 0-1, how much to blend with original (1 = full colorization)
   saturation?: number; // 0-2, saturation multiplier (1 = no change)
   contrast?: number; // 0-2, contrast multiplier (1 = no change)
   brightness?: number; // -100 to 100, brightness adjustment
   preserveEdges?: boolean; // Whether to apply edge preservation
 }
+
+export type ColorizeOptionValue = NonNullable<
+  ColorizeOptions[keyof ColorizeOptions]
+>;
 
 class ProcessingAbortedError extends Error {
   constructor() {
@@ -281,6 +297,161 @@ export class ImageColorizer {
     return [color[0], Math.max(0, color[1] * saturation), color[2]];
   }
 
+  private createPalette(selectedColors: string[]): PaletteEntry[] {
+    return selectedColors
+      .map((hex) => {
+        const rgb = this.hexToRgb(hex);
+        const oklab = this.rgbToOklab(...rgb);
+        const oklch = this.oklabToOklch(oklab);
+
+        return { oklab, oklch, lightness: oklch[0] };
+      })
+      .sort((a, b) => a.lightness - b.lightness);
+  }
+
+  private findLightnessStops(
+    palette: PaletteEntry[],
+    lightness: number
+  ): {
+    lowerColor: PaletteEntry;
+    upperColor: PaletteEntry;
+    amount: number;
+  } {
+    if (palette.length === 1) {
+      return {
+        lowerColor: palette[0],
+        upperColor: palette[0],
+        amount: 0,
+      };
+    }
+
+    const minLightness = palette[0].lightness;
+    const maxLightness = palette[palette.length - 1].lightness;
+    const clampedLightness = Math.max(
+      minLightness,
+      Math.min(lightness, maxLightness)
+    );
+    let lowerColor = palette[0];
+    let upperColor = palette[0];
+
+    for (let j = 0; j < palette.length - 1; j++) {
+      lowerColor = palette[j];
+      upperColor = palette[j + 1];
+
+      if (
+        clampedLightness >= lowerColor.lightness &&
+        clampedLightness <= upperColor.lightness
+      ) {
+        break;
+      }
+    }
+
+    const range = upperColor.lightness - lowerColor.lightness;
+    const amount =
+      range === 0 ? 0 : (clampedLightness - lowerColor.lightness) / range;
+
+    return { lowerColor, upperColor, amount };
+  }
+
+  private mapByTone(
+    outputLightness: number,
+    selectorLightness: number,
+    palette: PaletteEntry[]
+  ): OklchColor {
+    if (palette.length === 1) {
+      const targetOklch = palette[0].oklch;
+      const lightnessRatio = Math.min(
+        outputLightness / Math.max(targetOklch[0], 0.01),
+        1
+      );
+
+      return [
+        outputLightness,
+        targetOklch[1] * lightnessRatio,
+        targetOklch[2],
+      ];
+    }
+
+    const { lowerColor, upperColor, amount } = this.findLightnessStops(
+      palette,
+      selectorLightness
+    );
+    const lowerOklch = lowerColor.oklch;
+    const upperOklch = upperColor.oklch;
+
+    return [
+      outputLightness,
+      lowerOklch[1] + (upperOklch[1] - lowerOklch[1]) * amount,
+      this.interpolateHue(lowerOklch[2], upperOklch[2], amount),
+    ];
+  }
+
+  private mapByPalette(
+    originalOklab: OklabColor,
+    palette: PaletteEntry[]
+  ): OklchColor {
+    let totalWeight = 0;
+    let weightedA = 0;
+    let weightedB = 0;
+
+    for (const color of palette) {
+      const deltaL = (originalOklab[0] - color.oklab[0]) * 1.5;
+      const deltaA = originalOklab[1] - color.oklab[1];
+      const deltaB = originalOklab[2] - color.oklab[2];
+      const distanceSquared =
+        deltaL * deltaL + deltaA * deltaA + deltaB * deltaB;
+      const weight = 1 / (distanceSquared + 0.0004);
+
+      totalWeight += weight;
+      weightedA += color.oklab[1] * weight;
+      weightedB += color.oklab[2] * weight;
+    }
+
+    return this.oklabToOklch([
+      originalOklab[0],
+      weightedA / totalWeight,
+      weightedB / totalWeight,
+    ]);
+  }
+
+  private getLightnessRange(data: Uint8ClampedArray): LightnessRange {
+    const totalPixels = data.length / 4;
+    const pixelStep = Math.max(
+      VALIDATION_MIN_PIXEL_STEP,
+      Math.ceil(totalPixels / VALIDATION_TARGET_SAMPLE_COUNT)
+    );
+    let min = 1;
+    let max = 0;
+
+    for (let i = 0; i < data.length; i += pixelStep * 4) {
+      if (data[i + 3] === 0) continue;
+
+      const [lightness] = this.rgbToOklab(data[i], data[i + 1], data[i + 2]);
+      min = Math.min(min, lightness);
+      max = Math.max(max, lightness);
+    }
+
+    if (max <= min) {
+      return { min: 0, max: 1 };
+    }
+
+    return { min, max };
+  }
+
+  private mapLightnessToPalette(
+    lightness: number,
+    sourceRange: LightnessRange,
+    palette: PaletteEntry[]
+  ): number {
+    const sourceAmount =
+      (lightness - sourceRange.min) / (sourceRange.max - sourceRange.min);
+    const clampedAmount = Math.max(0, Math.min(1, sourceAmount));
+    const minLightness = palette[0].lightness;
+    const maxLightness = palette[palette.length - 1].lightness;
+
+    return minLightness + (maxLightness - minLightness) * clampedAmount;
+  }
+
   // Calculate perceptual color difference in OKLab space.
   private calculateColorDifference(
     color1: OklabColor,
@@ -419,6 +590,7 @@ export class ImageColorizer {
     }
 
     const {
+      mode = "toneMap",
       strength = 1.0,
       saturation = 1.0,
       contrast = 1.0,
@@ -462,17 +634,9 @@ export class ImageColorizer {
       ? await this.detectEdges(imageData, shouldAbort)
       : null;
 
-    // Convert palette to OKLCH for perceptually uniform hue/chroma processing.
-    const palette = selectedColors
-      .map((hex) => {
-        const rgb = this.hexToRgb(hex);
-        const oklch = this.rgbToOklch(...rgb);
-        return { oklch, lightness: oklch[0] };
-      })
-      .sort((a, b) => a.lightness - b.lightness);
-
-    const minLightness = palette[0].lightness;
-    const maxLightness = palette[palette.length - 1].lightness;
+    const palette = this.createPalette(selectedColors);
+    const sourceLightnessRange =
+      mode === "moodMatch" ? this.getLightnessRange(data) : null;
     let lastYieldTime = performance.now();
 
     // Process each pixel in OKLCH while preserving source lightness.
@@ -496,51 +660,34 @@ export class ImageColorizer {
         const isEdge = edges ? edges[pixelIndex] > 0 : false;
         const edgeStrength = isEdge ? strength * 0.5 : strength;
 
-        const [originalL] = this.rgbToOklab(r, g, b);
+        const originalOklab = this.rgbToOklab(r, g, b);
+        const originalLightness = originalOklab[0];
         let mappedColor: OklchColor;
 
-        if (palette.length === 1) {
-          const targetOklch = palette[0].oklch;
-          const lightnessRatio = Math.min(
-            originalL / Math.max(targetOklch[0], 0.01),
-            1
-          );
-
-          mappedColor = [
-            originalL,
-            targetOklch[1] * lightnessRatio,
-            targetOklch[2],
-          ];
-        } else {
-          const clampedLightness = Math.max(
-            minLightness,
-            Math.min(originalL, maxLightness)
-          );
-
-          let lowerColor = palette[0];
-          let upperColor = palette[0];
-          for (let j = 0; j < palette.length - 1; j++) {
-            lowerColor = palette[j];
-            upperColor = palette[j + 1];
-            if (
-              clampedLightness >= lowerColor.lightness &&
-              clampedLightness <= upperColor.lightness
-            ) {
-              break;
-            }
+        switch (mode) {
+          case "paletteMap":
+            mappedColor = this.mapByPalette(originalOklab, palette);
+            break;
+          case "moodMatch": {
+            const targetLightness = this.mapLightnessToPalette(
+              originalLightness,
+              sourceLightnessRange ?? { min: 0, max: 1 },
+              palette
+            );
+            mappedColor = this.mapByTone(
+              targetLightness,
+              targetLightness,
+              palette
+            );
+            break;
           }
-
-          const range = upperColor.lightness - lowerColor.lightness;
-          const amount =
-            range === 0 ? 0 : (clampedLightness - lowerColor.lightness) / range;
-
-          const lowerOklch = lowerColor.oklch;
-          const upperOklch = upperColor.oklch;
-          mappedColor = [
-            originalL,
-            lowerOklch[1] + (upperOklch[1] - lowerOklch[1]) * amount,
-            this.interpolateHue(lowerOklch[2], upperOklch[2], amount),
-          ];
+          case "toneMap":
+          default:
+            mappedColor = this.mapByTone(
+              originalLightness,
+              originalLightness,
+              palette
+            );
         }
 
         if (saturation !== 1.0) {
