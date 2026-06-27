@@ -159,7 +159,7 @@ export function ImageUploadPanel({
   ) : processedImage ? (
     <>
       <Sparkles className="w-4 h-4" />
-      Colorize More
+      Update Colorization
     </>
   ) : (
     <>
@@ -251,7 +251,7 @@ export function ImageUploadPanel({
 
         {/* Action Buttons Container */}
         <div className="flex gap-3 flex-col pt-4">
-          {/* Main action button: Upload -> Process -> Colorize More */}
+          {/* Main action button: Upload -> Process -> Update Colorization */}
           <button
             onClick={onProcessImage}
             disabled={!canProcess}

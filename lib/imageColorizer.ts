@@ -11,36 +11,9 @@ const SRGB_LINEAR_FACTOR = 12.92; // Linear factor for small values
 const SRGB_LINEAR_OFFSET = 0.055; // Offset for gamma correction
 const SRGB_INVERSE_GAMMA_THRESHOLD = 0.0031308; // Threshold for inverse gamma correction
 
-// sRGB to XYZ transformation matrix (ITU-R BT.709 primaries)
-// These constants convert sRGB to CIE XYZ color space
-const SRGB_TO_XYZ_R = { x: 0.4124564, y: 0.2126729, z: 0.0193339 };
-const SRGB_TO_XYZ_G = { x: 0.3575761, y: 0.7151522, z: 0.119192 };
-const SRGB_TO_XYZ_B = { x: 0.1804375, y: 0.072175, z: 0.9503041 };
-
-// XYZ to sRGB transformation matrix (inverse of above)
-const XYZ_TO_SRGB_X = { r: 3.2404542, g: -0.969266, b: 0.0556434 };
-const XYZ_TO_SRGB_Y = { r: -1.5371385, g: 1.8760108, b: -0.2040259 };
-const XYZ_TO_SRGB_Z = { r: -0.4985314, g: 0.041556, b: 1.0572252 };
-
-// D65 illuminant white point normalization factors
-// D65 is the standard daylight illuminant used in sRGB
-const D65_WHITE_POINT_X = 0.95047;
-const D65_WHITE_POINT_Y = 1.0;
-const D65_WHITE_POINT_Z = 1.08883;
-
-// XYZ to Lab conversion constants
-const LAB_DELTA = 6.0 / 29.0; // Delta threshold for Lab conversion
-const LAB_DELTA_CUBED = LAB_DELTA * LAB_DELTA * LAB_DELTA; // ~0.008856
-const LAB_DELTA_FACTOR = 7.787; // Factor for linear portion of Lab curve
-const LAB_OFFSET = 16.0 / 116.0; // Offset for Lab conversion
-const LAB_SCALE_L = 116.0; // Lightness scale factor
-const LAB_SCALE_A = 500.0; // A* channel scale factor
-const LAB_SCALE_B = 200.0; // B* channel scale factor
-const LAB_LIGHTNESS_OFFSET = 16.0; // Lightness offset
-
-// Perceptual color difference thresholds (CIEDE2000 approximation)
-const COLOR_DIFFERENCE_THRESHOLD_AVERAGE = 2.0; // Average acceptable difference
-const COLOR_DIFFERENCE_THRESHOLD_MAX = 5.0; // Maximum acceptable difference
+// Perceptual color difference thresholds in OKLab space
+const COLOR_DIFFERENCE_THRESHOLD_AVERAGE = 0.04; // Average acceptable difference
+const COLOR_DIFFERENCE_THRESHOLD_MAX = 0.12; // Maximum acceptable difference
 const VALIDATION_TARGET_SAMPLE_COUNT = 50000;
 const VALIDATION_MIN_PIXEL_STEP = 10;
 const PROCESSING_TIME_BUDGET_MS = 12;
@@ -86,6 +59,9 @@ interface ProcessingOptions {
   maxDimension?: number | null;
   shouldAbort?: () => boolean;
 }
+
+type OklabColor = [number, number, number];
+type OklchColor = [number, number, number];
 
 export interface ColorizeOptions {
   strength?: number; // 0-1, how much to blend with original (1 = full colorization)
@@ -159,153 +135,162 @@ export class ImageColorizer {
     });
   }
 
-  // Lab color space conversion functions for perceptually accurate processing
-  private rgbToLab(r: number, g: number, b: number): [number, number, number] {
-    // Convert RGB to XYZ
-    let x = r / 255;
-    let y = g / 255;
-    let z = b / 255;
+  private srgbChannelToLinear(channel: number): number {
+    const value = channel / 255;
 
-    // Apply gamma correction (sRGB to linear RGB)
-    x =
-      x > SRGB_GAMMA_THRESHOLD
-        ? Math.pow(
-            (x + SRGB_LINEAR_OFFSET) / SRGB_GAMMA_FACTOR,
-            SRGB_GAMMA_EXPONENT
-          )
-        : x / SRGB_LINEAR_FACTOR;
-    y =
-      y > SRGB_GAMMA_THRESHOLD
-        ? Math.pow(
-            (y + SRGB_LINEAR_OFFSET) / SRGB_GAMMA_FACTOR,
-            SRGB_GAMMA_EXPONENT
-          )
-        : y / SRGB_LINEAR_FACTOR;
-    z =
-      z > SRGB_GAMMA_THRESHOLD
-        ? Math.pow(
-            (z + SRGB_LINEAR_OFFSET) / SRGB_GAMMA_FACTOR,
-            SRGB_GAMMA_EXPONENT
-          )
-        : z / SRGB_LINEAR_FACTOR;
-
-    // Transform linear RGB to XYZ using ITU-R BT.709 matrix
-    const xyzX =
-      x * SRGB_TO_XYZ_R.x + y * SRGB_TO_XYZ_G.x + z * SRGB_TO_XYZ_B.x;
-    const xyzY =
-      x * SRGB_TO_XYZ_R.y + y * SRGB_TO_XYZ_G.y + z * SRGB_TO_XYZ_B.y;
-    const xyzZ =
-      x * SRGB_TO_XYZ_R.z + y * SRGB_TO_XYZ_G.z + z * SRGB_TO_XYZ_B.z;
-
-    // Normalize for D65 illuminant
-    x = xyzX / D65_WHITE_POINT_X;
-    y = xyzY / D65_WHITE_POINT_Y;
-    z = xyzZ / D65_WHITE_POINT_Z;
-
-    // Convert XYZ to Lab
-    x =
-      x > LAB_DELTA_CUBED
-        ? Math.pow(x, 1 / 3)
-        : LAB_DELTA_FACTOR * x + LAB_OFFSET;
-    y =
-      y > LAB_DELTA_CUBED
-        ? Math.pow(y, 1 / 3)
-        : LAB_DELTA_FACTOR * y + LAB_OFFSET;
-    z =
-      z > LAB_DELTA_CUBED
-        ? Math.pow(z, 1 / 3)
-        : LAB_DELTA_FACTOR * z + LAB_OFFSET;
-
-    const L = Math.max(0, LAB_SCALE_L * y - LAB_LIGHTNESS_OFFSET);
-    const a = LAB_SCALE_A * (x - y);
-    const b_lab = LAB_SCALE_B * (y - z);
-
-    return [L, a, b_lab];
+    return value > SRGB_GAMMA_THRESHOLD
+      ? Math.pow(
+          (value + SRGB_LINEAR_OFFSET) / SRGB_GAMMA_FACTOR,
+          SRGB_GAMMA_EXPONENT
+        )
+      : value / SRGB_LINEAR_FACTOR;
   }
 
-  private labToRgb(L: number, a: number, b: number): [number, number, number] {
-    // Convert Lab to XYZ
-    let y = (L + LAB_LIGHTNESS_OFFSET) / LAB_SCALE_L;
-    let x = a / LAB_SCALE_A + y;
-    let z = y - b / LAB_SCALE_B;
-
-    x =
-      Math.pow(x, 3) > LAB_DELTA_CUBED
-        ? Math.pow(x, 3)
-        : (x - LAB_OFFSET) / LAB_DELTA_FACTOR;
-    y =
-      Math.pow(y, 3) > LAB_DELTA_CUBED
-        ? Math.pow(y, 3)
-        : (y - LAB_OFFSET) / LAB_DELTA_FACTOR;
-    z =
-      Math.pow(z, 3) > LAB_DELTA_CUBED
-        ? Math.pow(z, 3)
-        : (z - LAB_OFFSET) / LAB_DELTA_FACTOR;
-
-    // Scale by D65 illuminant
-    x *= D65_WHITE_POINT_X;
-    y *= D65_WHITE_POINT_Y;
-    z *= D65_WHITE_POINT_Z;
-
-    // Convert XYZ to linear RGB using inverse transformation matrix
-    let r = x * XYZ_TO_SRGB_X.r + y * XYZ_TO_SRGB_Y.r + z * XYZ_TO_SRGB_Z.r;
-    let g = x * XYZ_TO_SRGB_X.g + y * XYZ_TO_SRGB_Y.g + z * XYZ_TO_SRGB_Z.g;
-    let blue = x * XYZ_TO_SRGB_X.b + y * XYZ_TO_SRGB_Y.b + z * XYZ_TO_SRGB_Z.b;
-
-    // Apply inverse gamma correction (linear RGB to sRGB)
-    r =
-      r > SRGB_INVERSE_GAMMA_THRESHOLD
-        ? SRGB_GAMMA_FACTOR * Math.pow(r, 1 / SRGB_GAMMA_EXPONENT) -
+  private linearChannelToSrgb(channel: number): number {
+    const value =
+      channel > SRGB_INVERSE_GAMMA_THRESHOLD
+        ? SRGB_GAMMA_FACTOR * Math.pow(channel, 1 / SRGB_GAMMA_EXPONENT) -
           SRGB_LINEAR_OFFSET
-        : SRGB_LINEAR_FACTOR * r;
-    g =
-      g > SRGB_INVERSE_GAMMA_THRESHOLD
-        ? SRGB_GAMMA_FACTOR * Math.pow(g, 1 / SRGB_GAMMA_EXPONENT) -
-          SRGB_LINEAR_OFFSET
-        : SRGB_LINEAR_FACTOR * g;
-    blue =
-      blue > SRGB_INVERSE_GAMMA_THRESHOLD
-        ? SRGB_GAMMA_FACTOR * Math.pow(blue, 1 / SRGB_GAMMA_EXPONENT) -
-          SRGB_LINEAR_OFFSET
-        : SRGB_LINEAR_FACTOR * blue;
+        : SRGB_LINEAR_FACTOR * channel;
+
+    return Math.round(value * 255);
+  }
+
+  // OKLab/OKLCH color conversion keeps perceived lightness and chroma steadier
+  // than CIE Lab/HSL for palette-driven image processing.
+  private rgbToOklab(r: number, g: number, b: number): OklabColor {
+    const linearR = this.srgbChannelToLinear(r);
+    const linearG = this.srgbChannelToLinear(g);
+    const linearB = this.srgbChannelToLinear(b);
+
+    const l = Math.cbrt(
+      0.4122214708 * linearR +
+        0.5363325363 * linearG +
+        0.0514459929 * linearB
+    );
+    const m = Math.cbrt(
+      0.2119034982 * linearR +
+        0.6806995451 * linearG +
+        0.1073969566 * linearB
+    );
+    const s = Math.cbrt(
+      0.0883024619 * linearR +
+        0.2817188376 * linearG +
+        0.6299787005 * linearB
+    );
 
     return [
-      Math.max(0, Math.min(255, Math.round(r * 255))),
-      Math.max(0, Math.min(255, Math.round(g * 255))),
-      Math.max(0, Math.min(255, Math.round(blue * 255))),
+      0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+      1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
+      0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
     ];
   }
 
-  // Calculate perceptual color difference using CIEDE2000 approximation
+  private oklabToRgb(L: number, a: number, b: number): [number, number, number] {
+    const lPrime = L + 0.3963377774 * a + 0.2158037573 * b;
+    const mPrime = L - 0.1055613458 * a - 0.0638541728 * b;
+    const sPrime = L - 0.0894841775 * a - 1.291485548 * b;
+
+    const l = lPrime * lPrime * lPrime;
+    const m = mPrime * mPrime * mPrime;
+    const s = sPrime * sPrime * sPrime;
+
+    const linearR = 4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s;
+    const linearG = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s;
+    const linearB = -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s;
+
+    return [
+      this.clamp(this.linearChannelToSrgb(linearR)),
+      this.clamp(this.linearChannelToSrgb(linearG)),
+      this.clamp(this.linearChannelToSrgb(linearB)),
+    ];
+  }
+
+  private oklabToOklch([L, a, b]: OklabColor): OklchColor {
+    const chroma = Math.sqrt(a * a + b * b);
+    const hue = (Math.atan2(b, a) * 180) / Math.PI;
+
+    return [L, chroma, hue < 0 ? hue + 360 : hue];
+  }
+
+  private oklchToOklab([L, chroma, hue]: OklchColor): OklabColor {
+    const hueRadians = (hue * Math.PI) / 180;
+
+    return [L, chroma * Math.cos(hueRadians), chroma * Math.sin(hueRadians)];
+  }
+
+  private rgbToOklch(r: number, g: number, b: number): OklchColor {
+    return this.oklabToOklch(this.rgbToOklab(r, g, b));
+  }
+
+  private isOklchInSrgbGamut(color: OklchColor): boolean {
+    const [L, a, b] = this.oklchToOklab(color);
+    const lPrime = L + 0.3963377774 * a + 0.2158037573 * b;
+    const mPrime = L - 0.1055613458 * a - 0.0638541728 * b;
+    const sPrime = L - 0.0894841775 * a - 1.291485548 * b;
+
+    const l = lPrime * lPrime * lPrime;
+    const m = mPrime * mPrime * mPrime;
+    const s = sPrime * sPrime * sPrime;
+
+    const linearR = 4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s;
+    const linearG = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s;
+    const linearB = -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s;
+    const epsilon = 0.000001;
+
+    return (
+      linearR >= -epsilon &&
+      linearR <= 1 + epsilon &&
+      linearG >= -epsilon &&
+      linearG <= 1 + epsilon &&
+      linearB >= -epsilon &&
+      linearB <= 1 + epsilon
+    );
+  }
+
+  private mapOklchToSrgb(color: OklchColor): [number, number, number] {
+    if (this.isOklchInSrgbGamut(color)) {
+      return this.oklabToRgb(...this.oklchToOklab(color));
+    }
+
+    let lowChroma = 0;
+    let highChroma = color[1];
+
+    for (let i = 0; i < 12; i++) {
+      const midChroma = (lowChroma + highChroma) / 2;
+      const candidate: OklchColor = [color[0], midChroma, color[2]];
+
+      if (this.isOklchInSrgbGamut(candidate)) {
+        lowChroma = midChroma;
+      } else {
+        highChroma = midChroma;
+      }
+    }
+
+    return this.oklabToRgb(...this.oklchToOklab([color[0], lowChroma, color[2]]));
+  }
+
+  private interpolateHue(startHue: number, endHue: number, amount: number) {
+    const delta = ((((endHue - startHue) % 360) + 540) % 360) - 180;
+    const hue = startHue + delta * amount;
+
+    return ((hue % 360) + 360) % 360;
+  }
+
+  private adjustChroma(color: OklchColor, saturation: number): OklchColor {
+    return [color[0], Math.max(0, color[1] * saturation), color[2]];
+  }
+
+  // Calculate perceptual color difference in OKLab space.
   private calculateColorDifference(
-    lab1: [number, number, number],
-    lab2: [number, number, number]
+    color1: OklabColor,
+    color2: OklabColor
   ): number {
-    const [L1, a1, b1] = lab1;
-    const [L2, a2, b2] = lab2;
+    const deltaL = color1[0] - color2[0];
+    const deltaA = color1[1] - color2[1];
+    const deltaB = color1[2] - color2[2];
 
-    // Simplified CIEDE2000 calculation (approximation for performance)
-    const deltaL = L1 - L2;
-    const deltaA = a1 - a2;
-    const deltaB = b1 - b2;
-
-    const C1 = Math.sqrt(a1 * a1 + b1 * b1);
-    const C2 = Math.sqrt(a2 * a2 + b2 * b2);
-    const deltaC = C1 - C2;
-
-    const deltaH = Math.sqrt(
-      Math.max(0, deltaA * deltaA + deltaB * deltaB - deltaC * deltaC)
-    );
-
-    const kL = 1.0;
-    const kC = 1.0;
-    const kH = 1.0;
-
-    return Math.sqrt(
-      Math.pow(deltaL / kL, 2) +
-        Math.pow(deltaC / kC, 2) +
-        Math.pow(deltaH / kH, 2)
-    );
+    return Math.sqrt(deltaL * deltaL + deltaA * deltaA + deltaB * deltaB);
   }
 
   // Enhanced edge detection for color bleeding prevention
@@ -386,79 +371,8 @@ export class ImageColorizer {
     return edges;
   }
 
-  private rgbToHsl(r: number, g: number, b: number): [number, number, number] {
-    r /= 255;
-    g /= 255;
-    b /= 255;
-
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-    let h = 0,
-      s = 0;
-    const l = (max + min) / 2;
-
-    if (max === min) {
-      h = s = 0; // achromatic
-    } else {
-      const d = max - min;
-      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-      switch (max) {
-        case r:
-          h = (g - b) / d + (g < b ? 6 : 0);
-          break;
-        case g:
-          h = (b - r) / d + 2;
-          break;
-        case b:
-          h = (r - g) / d + 4;
-          break;
-      }
-      h /= 6;
-    }
-
-    return [h * 360, s, l];
-  }
-
-  private hslToRgb(h: number, s: number, l: number): [number, number, number] {
-    h /= 360;
-
-    const hue2rgb = (p: number, q: number, t: number) => {
-      if (t < 0) t += 1;
-      if (t > 1) t -= 1;
-      if (t < 1 / 6) return p + (q - p) * 6 * t;
-      if (t < 1 / 2) return q;
-      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-      return p;
-    };
-
-    let r, g, b;
-
-    if (s === 0) {
-      r = g = b = l; // achromatic
-    } else {
-      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-      const p = 2 * l - q;
-      r = hue2rgb(p, q, h + 1 / 3);
-      g = hue2rgb(p, q, h);
-      b = hue2rgb(p, q, h - 1 / 3);
-    }
-
-    return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
-  }
-
   private clamp(value: number, min: number = 0, max: number = 255): number {
     return Math.max(min, Math.min(max, value));
-  }
-
-  private adjustSaturation(
-    r: number,
-    g: number,
-    b: number,
-    saturation: number
-  ): [number, number, number] {
-    const [h, s, l] = this.rgbToHsl(r, g, b);
-    const newS = Math.max(0, Math.min(1, s * saturation));
-    return this.hslToRgb(h, newS, l);
   }
 
   private adjustContrast(
@@ -492,7 +406,7 @@ export class ImageColorizer {
     ];
   }
 
-  // Main colorization method using Lab color space for pixel-perfect results
+  // Main colorization method using OKLab/OKLCH for perceptual palette mapping
   async colorizeImage(
     image: HTMLImageElement,
     selectedColors: string[],
@@ -548,12 +462,12 @@ export class ImageColorizer {
       ? await this.detectEdges(imageData, shouldAbort)
       : null;
 
-    // Convert palette to Lab space for perceptually uniform processing
+    // Convert palette to OKLCH for perceptually uniform hue/chroma processing.
     const palette = selectedColors
       .map((hex) => {
         const rgb = this.hexToRgb(hex);
-        const lab = this.rgbToLab(...rgb);
-        return { rgb, lab, lightness: lab[0] }; // L channel is lightness in Lab
+        const oklch = this.rgbToOklch(...rgb);
+        return { oklch, lightness: oklch[0] };
       })
       .sort((a, b) => a.lightness - b.lightness);
 
@@ -561,7 +475,7 @@ export class ImageColorizer {
     const maxLightness = palette[palette.length - 1].lightness;
     let lastYieldTime = performance.now();
 
-    // Process each pixel in Lab color space
+    // Process each pixel in OKLCH while preserving source lightness.
     for (let y = 0; y < this.canvas.height; y++) {
       if (shouldAbort?.()) {
         throw new ProcessingAbortedError();
@@ -582,24 +496,21 @@ export class ImageColorizer {
         const isEdge = edges ? edges[pixelIndex] > 0 : false;
         const edgeStrength = isEdge ? strength * 0.5 : strength;
 
-        const [originalL] = this.rgbToLab(r, g, b);
-
-        let newR: number, newG: number, newB: number;
+        const [originalL] = this.rgbToOklab(r, g, b);
+        let mappedColor: OklchColor;
 
         if (palette.length === 1) {
-          const targetLab = palette[0].lab;
-          const luminanceRatio = Math.min(
-            originalL / Math.max(targetLab[0], 1),
-            1.0
+          const targetOklch = palette[0].oklch;
+          const lightnessRatio = Math.min(
+            originalL / Math.max(targetOklch[0], 0.01),
+            1
           );
 
-          const newLab: [number, number, number] = [
+          mappedColor = [
             originalL,
-            targetLab[1] * luminanceRatio,
-            targetLab[2] * luminanceRatio,
+            targetOklch[1] * lightnessRatio,
+            targetOklch[2],
           ];
-
-          [newR, newG, newB] = this.labToRgb(...newLab);
         } else {
           const clampedLightness = Math.max(
             minLightness,
@@ -623,25 +534,20 @@ export class ImageColorizer {
           const amount =
             range === 0 ? 0 : (clampedLightness - lowerColor.lightness) / range;
 
-          const lowerLab = lowerColor.lab;
-          const upperLab = upperColor.lab;
-          const interpolatedLab: [number, number, number] = [
+          const lowerOklch = lowerColor.oklch;
+          const upperOklch = upperColor.oklch;
+          mappedColor = [
             originalL,
-            lowerLab[1] + (upperLab[1] - lowerLab[1]) * amount,
-            lowerLab[2] + (upperLab[2] - lowerLab[2]) * amount,
+            lowerOklch[1] + (upperOklch[1] - lowerOklch[1]) * amount,
+            this.interpolateHue(lowerOklch[2], upperOklch[2], amount),
           ];
-
-          [newR, newG, newB] = this.labToRgb(...interpolatedLab);
         }
 
         if (saturation !== 1.0) {
-          [newR, newG, newB] = this.adjustSaturation(
-            newR,
-            newG,
-            newB,
-            saturation
-          );
+          mappedColor = this.adjustChroma(mappedColor, saturation);
         }
+
+        let [newR, newG, newB] = this.mapOklchToSrgb(mappedColor);
 
         if (contrast !== 1.0) {
           [newR, newG, newB] = this.adjustContrast(newR, newG, newB, contrast);
@@ -697,9 +603,9 @@ export class ImageColorizer {
     );
     const data = imageData.data;
 
-    const targetLabColors = targetPalette.map((hex) => {
+    const targetOklabColors = targetPalette.map((hex) => {
       const rgb = this.hexToRgb(hex);
-      return this.rgbToLab(...rgb);
+      return this.rgbToOklab(...rgb);
     });
 
     let totalError = 0;
@@ -715,12 +621,12 @@ export class ImageColorizer {
     for (let i = 0; i < data.length; i += pixelStep * 4) {
       if (data[i + 3] === 0) continue; // Skip transparent pixels
 
-      const pixelLab = this.rgbToLab(data[i], data[i + 1], data[i + 2]);
+      const pixelOklab = this.rgbToOklab(data[i], data[i + 1], data[i + 2]);
 
       // Find closest target color
       let minDistance = Infinity;
-      for (const targetLab of targetLabColors) {
-        const distance = this.calculateColorDifference(pixelLab, targetLab);
+      for (const targetOklab of targetOklabColors) {
+        const distance = this.calculateColorDifference(pixelOklab, targetOklab);
         minDistance = Math.min(minDistance, distance);
       }
 
